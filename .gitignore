@@ -1,0 +1,11 @@
+node_modules/
+dist/
+
+antelope.json
+antelope.*.json
+.antelope/cache/
+# pnpm store
+.pnpm-store/
+
+# pnpm lock file (uncomment if you prefer to not commit)
+# pnpm-lock.yaml
