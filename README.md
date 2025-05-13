@@ -8,13 +8,19 @@
 
 A module that provides database decorator interfaces only, without implementation code.
 
-For detailed documentation on the Database Decorators interface, please refer to the [docs](https://github.com/AntelopeJS/interface-database-decorators).
-
 ## Installation
 
 ```bash
 ajs project modules add @antelopejs/database-decorators
 ```
+
+## Interfaces
+
+This module implements the Database Decorators interface. The interface is installed separately to maintain modularity and minimize dependencies.
+
+| Name                | Install command                              |                                                                              |
+| ------------------- | -------------------------------------------- | ---------------------------------------------------------------------------- |
+| Database Decorators | `ajs module imports add database-decorators` | [Documentation](https://github.com/AntelopeJS/interface-database-decorators) |
 
 ## License
 
