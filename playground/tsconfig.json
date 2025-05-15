@@ -22,6 +22,10 @@
     "baseUrl": "src",
     "paths": {
       "@ajs.local/*": ["../src/interfaces/*"],
+	  "@ajs/database-decorators/*": ["../../.antelope/output/database-decorators/*"],
+      "@ajs/database/*": ["../../.antelope/interfaces.d/database/*"],
+      "@ajs/core/*": ["../../.antelope/interfaces.d/core/*"],
+      "@ajs/api/*": ["../../.antelope/interfaces.d/api/*"],
       "@ajs/*": ["../.antelope/interfaces.d/*"],
       "@/*": ["./*"]
     }
