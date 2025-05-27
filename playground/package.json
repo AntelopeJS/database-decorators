@@ -12,15 +12,25 @@
   },
   "antelopeJs": {
     "imports": [
-      "core@beta",
-      "api@beta",
-      "database-decorators@beta"
+      {
+        "name": "core@beta",
+        "skipInstall": true
+      },
+      {
+        "name": "api@beta",
+        "skipInstall": true
+      },
+      {
+        "name": "database-decorators@beta",
+        "skipInstall": true
+      }
     ],
     "baseUrl": "dist",
     "paths": {
       "@/*": [
         "*"
       ]
-    }
+    },
+    "importsOptional": []
   }
-} 
+}
