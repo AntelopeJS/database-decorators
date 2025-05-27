@@ -1,0 +1,47 @@
+{
+  "name": "playground",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "modules": {
+    "playground": {
+      "source": {
+        "type": "local",
+        "path": ".",
+        "installCommand": "npx tsc"
+      }
+    },
+    "@antelopejs/database-decorators": {
+      "source": {
+        "type": "local",
+        "path": "..",
+        "installCommand": ["npx tsc"]
+      }
+    },
+    "@antelopejs/api": {
+      "source": {
+        "type": "package",
+        "package": "@antelopejs/api",
+        "version": "0.0.1"
+      },
+      "config": {
+        "servers": [
+          {
+            "protocol": "http",
+            "port": "5010"
+          }
+        ]
+      }
+    },
+    "@antelopejs/mongodb": {
+      "source": {
+        "type": "package",
+        "package": "@antelopejs/mongodb",
+        "version": "0.0.1"
+      },
+      "config": {
+        "url": "mongodb://localhost:27017"
+      }
+    }
+  }
+}
