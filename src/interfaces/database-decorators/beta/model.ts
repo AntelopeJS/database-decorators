@@ -59,9 +59,11 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
      * AQL Table reference.
      */
     public readonly table: DatabaseDev.Table<T>;
+    public readonly modelName: Name;
 
     constructor(public readonly database: DatabaseDev.Database<{ [K in Name]: T }>) {
       this.table = database.table<undefined>(tableName);
+      this.modelName = tableName;
     }
 
     /**

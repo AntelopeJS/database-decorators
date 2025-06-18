@@ -22,6 +22,7 @@ export declare function BasicDataModel<T extends {}, Name extends string>(dataTy
          * AQL Table reference.
          */
         readonly table: DatabaseDev.Table<T>;
+        readonly modelName: Name;
         readonly database: DatabaseDev.Database<{ [K in Name]: T; }>;
         /**
          * Get a single element from the table using its primary key.
