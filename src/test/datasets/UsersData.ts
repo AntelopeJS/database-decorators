@@ -4,7 +4,7 @@ export const usersData: Partial<Users>[] = [
   {
     name: 'Jean Dupont',
     email: 'jean.dupont@email.com',
-    password: 'password123',
+    password: '123456789',
     role: 'user',
     age: 28,
     is_active: true,
@@ -12,7 +12,7 @@ export const usersData: Partial<Users>[] = [
   {
     name: 'Marie Martin',
     email: 'marie.martin@email.com',
-    password: 'password456',
+    password: 'password.1',
     role: 'admin',
     age: 35,
     is_active: true,
@@ -20,7 +20,7 @@ export const usersData: Partial<Users>[] = [
   {
     name: 'Pierre Durand',
     email: 'pierre.durand@email.com',
-    password: 'password789',
+    password: 'qwerty',
     role: 'user',
     age: 42,
     is_active: false,
@@ -28,7 +28,7 @@ export const usersData: Partial<Users>[] = [
   {
     name: 'Sophie Bernard',
     email: 'sophie.bernard@email.com',
-    password: 'password101',
+    password: 'iloveyou',
     role: 'user',
     age: 31,
     is_active: true,
@@ -36,7 +36,7 @@ export const usersData: Partial<Users>[] = [
   {
     name: 'Lucas Petit',
     email: 'lucas.petit@email.com',
-    password: 'password202',
+    password: '1q2w3e4r',
     role: 'admin',
     age: 26,
     is_active: true,

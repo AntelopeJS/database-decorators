@@ -20,12 +20,12 @@ export const ordersData: Partial<Orders>[] = [
     status: 'delivered',
     payment_status: 'paid',
     shipping_address: {
-      street: '123 Rue de la Paix',
+      street: '123 Peace Street',
       city: 'Paris',
       postal_code: '75001',
       country: 'France',
     },
-    notes: 'Livraison en point relais',
+    notes: 'Delivery to pickup point',
   },
   {
     customer_id: 'customer_002',
@@ -52,12 +52,12 @@ export const ordersData: Partial<Orders>[] = [
     status: 'shipped',
     payment_status: 'paid',
     shipping_address: {
-      street: '456 Avenue des Champs',
+      street: '456 Avenue of the Fields',
       city: 'Lyon',
       postal_code: '69001',
       country: 'France',
     },
-    notes: 'Livraison gratuite',
+    notes: 'Free shipping',
   },
   {
     customer_id: 'customer_003',
@@ -78,12 +78,12 @@ export const ordersData: Partial<Orders>[] = [
     status: 'pending',
     payment_status: 'pending',
     shipping_address: {
-      street: '789 Boulevard Central',
+      street: '789 Central Boulevard',
       city: 'Marseille',
       postal_code: '13001',
       country: 'France',
     },
-    notes: 'Paiement en attente',
+    notes: 'Payment pending',
   },
   {
     customer_id: 'customer_004',
@@ -104,12 +104,12 @@ export const ordersData: Partial<Orders>[] = [
     status: 'confirmed',
     payment_status: 'paid',
     shipping_address: {
-      street: '321 Rue du Commerce',
+      street: '321 Commerce Street',
       city: 'Toulouse',
       postal_code: '31000',
       country: 'France',
     },
-    notes: 'Commande confirmée',
+    notes: 'Order confirmed',
   },
   {
     customer_id: 'customer_005',
@@ -136,11 +136,11 @@ export const ordersData: Partial<Orders>[] = [
     status: 'cancelled',
     payment_status: 'refunded',
     shipping_address: {
-      street: '654 Place de la République',
+      street: '654 Republic Square',
       city: 'Nantes',
       postal_code: '44000',
       country: 'France',
     },
-    notes: 'Commande annulée par le client',
+    notes: 'Order cancelled by customer',
   },
 ];
