@@ -1,18 +1,18 @@
 import { expect } from 'chai';
 import {
+  attachModifier,
+  ContainerModifier,
+  fromDatabase,
+  fromPlainData,
+  getModifiedFields,
+  lock,
   Modifier,
   OneWayModifier,
-  TwoWayModifier,
-  ContainerModifier,
-  attachModifier,
-  fromPlainData,
-  toPlainData,
-  fromDatabase,
-  toDatabase,
-  unlock,
-  lock,
   testValue,
-  getModifiedFields,
+  toDatabase,
+  toPlainData,
+  TwoWayModifier,
+  unlock,
 } from '@ajs.local/database-decorators/beta/modifiers/common';
 import { Table } from '@ajs.local/database-decorators/beta/table';
 
@@ -98,8 +98,7 @@ async function CreateOneWayModifierTest() {
   expect(result).to.equal('test_value');
 
   const isMatch = modifier.test('test_value', 'value', 'test');
-  const matchResult = isMatch;
-  expect(matchResult).to.equal(true);
+  expect(isMatch).to.equal(true);
 }
 
 interface TwoWayMeta {
