@@ -15,20 +15,28 @@ describe('Modifiers - hash', () => {
   it('maintains hash consistency', async () => MaintainHashConsistencyTest());
 });
 
+interface HashOptions {
+  algorithm?: string;
+}
+
+interface HashMeta {
+  salt?: string;
+}
+
 class TestableHashModifier extends HashModifier {
-  public setOptions(options: { algorithm?: string }) {
+  public setOptions(options: HashOptions) {
     this.options = options;
   }
 
-  public getOptions() {
+  public getOptions(): HashOptions {
     return this.options;
   }
 
-  public getMeta() {
+  public getMeta(): HashMeta {
     return this.meta;
   }
 
-  public setMeta(meta: { salt?: string }) {
+  public setMeta(meta: HashMeta) {
     this.meta = meta;
   }
 }
@@ -108,7 +116,6 @@ async function GenerateUniqueSaltForEachFieldTest() {
 }
 
 async function HandleHashDecoratorTest() {
-  // Utiliser Table.with() pour appliquer le mixin
   const TestTableWithMixin = Table.with(HashModifier);
 
   class TestTable extends TestTableWithMixin {
@@ -138,8 +145,12 @@ async function TestHashValuesTest() {
   expect(isNotMatch).to.equal(false);
 }
 
+interface TestTableWithHash extends Table {
+  password: string;
+  testHash(field: 'password', value: string): boolean;
+}
+
 async function ProvideTestHashMethodTest() {
-  // Utiliser Table.with() pour appliquer le mixin
   const TestTableWithMixin = Table.with(HashModifier);
 
   class TestTable extends TestTableWithMixin {
@@ -147,10 +158,9 @@ async function ProvideTestHashMethodTest() {
     password!: string;
   }
 
-  const instance = new TestTable() as any;
+  const instance = new TestTable() as TestTableWithHash;
   instance.password = 'myPassword123';
 
-  // Vérifier que la méthode testHash existe
   expect(typeof instance.testHash).to.equal('function');
 
   const isMatch = instance.testHash('password', 'myPassword123');
@@ -168,7 +178,6 @@ async function MaintainHashConsistencyTest() {
   const hashed1 = modifier.lock(undefined, originalValue);
   const salt = modifier.getMeta().salt;
 
-  // Réutiliser le même salt pour la cohérence
   modifier.setMeta({ salt });
   const hashed2 = modifier.lock(undefined, originalValue);
 

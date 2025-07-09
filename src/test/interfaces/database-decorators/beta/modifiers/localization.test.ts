@@ -15,12 +15,16 @@ describe('Modifiers - localization', () => {
   it('maintains data structure integrity', async () => MaintainDataStructureIntegrityTest());
 });
 
+interface LocalizationOptions {
+  fallbackLocale?: string;
+}
+
 class TestableLocalizationModifier extends LocalizationModifier {
-  public setOptions(options: { fallbackLocale?: string }) {
+  public setOptions(options: LocalizationOptions) {
     this.options = options;
   }
 
-  public getOptions() {
+  public getOptions(): LocalizationOptions {
     return this.options;
   }
 }
@@ -129,8 +133,13 @@ async function HandleLocalizationDecoratorTest() {
   expect(instance.description).to.deep.equal({ fr: 'French Description' });
 }
 
+interface TestTableWithLocalize extends Table {
+  title: Record<string, string>;
+  description: Record<string, string>;
+  localize(locale: string, fields?: Array<keyof TestTableWithLocalize>): TestTableWithLocalize;
+}
+
 async function ProvideLocalizeMethodTest() {
-  // Utiliser Table.with() pour appliquer le mixin
   const TestTableWithMixin = Table.with(LocalizationModifier);
 
   class TestTable extends TestTableWithMixin {
@@ -141,11 +150,10 @@ async function ProvideLocalizeMethodTest() {
     description!: Record<string, string>;
   }
 
-  const instance = new TestTable() as any;
+  const instance = new TestTable() as TestTableWithLocalize;
   instance.title = { en: 'English Title', fr: 'French Title' };
   instance.description = { en: 'English Description', fr: 'French Description' };
 
-  // Vérifier que la méthode localize existe
   expect(typeof instance.localize).to.equal('function');
 
   instance.localize('fr');
@@ -154,8 +162,14 @@ async function ProvideLocalizeMethodTest() {
   expect(instance.description).to.equal('French Description');
 }
 
+interface TestTableWithLocalizeSpecific extends Table {
+  title: Record<string, string>;
+  description: Record<string, string>;
+  content: Record<string, string>;
+  localize(locale: string, fields?: Array<keyof TestTableWithLocalizeSpecific>): TestTableWithLocalizeSpecific;
+}
+
 async function LocalizeSpecificFieldsTest() {
-  // Utiliser Table.with() pour appliquer le mixin
   const TestTableWithMixin = Table.with(LocalizationModifier);
 
   class TestTable extends TestTableWithMixin {
@@ -169,12 +183,11 @@ async function LocalizeSpecificFieldsTest() {
     content!: Record<string, string>;
   }
 
-  const instance = new TestTable() as any;
+  const instance = new TestTable() as TestTableWithLocalizeSpecific;
   instance.title = { en: 'English Title', fr: 'French Title' };
   instance.description = { en: 'English Description', fr: 'French Description' };
   instance.content = { en: 'English Content', fr: 'French Content' };
 
-  // Vérifier que la méthode localize existe
   expect(typeof instance.localize).to.equal('function');
 
   instance.localize('fr', ['title', 'content']);
@@ -184,17 +197,22 @@ async function LocalizeSpecificFieldsTest() {
   expect(instance.content).to.equal('French Content');
 }
 
+interface ComplexLocalizedData {
+  title: string;
+  content: string;
+}
+
 async function MaintainDataStructureIntegrityTest() {
   const modifier = new TestableLocalizationModifier();
   modifier.setOptions({ fallbackLocale: 'en' });
 
   const complexData = {
-    en: { title: 'English Title', content: 'English Content' },
-    fr: { title: 'French Title', content: 'French Content' },
+    en: { title: 'English Title', content: 'English Content' } as ComplexLocalizedData,
+    fr: { title: 'French Title', content: 'French Content' } as ComplexLocalizedData,
   };
 
-  const enValue = modifier.unlock(complexData, 'en');
-  const frValue = modifier.unlock(complexData, 'fr');
+  const enValue = modifier.unlock(complexData, 'en') as ComplexLocalizedData;
+  const frValue = modifier.unlock(complexData, 'fr') as ComplexLocalizedData;
 
   expect(enValue).to.deep.equal({ title: 'English Title', content: 'English Content' });
   expect(frValue).to.deep.equal({ title: 'French Title', content: 'French Content' });

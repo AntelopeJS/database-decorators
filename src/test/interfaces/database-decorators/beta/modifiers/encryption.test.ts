@@ -14,20 +14,31 @@ describe('Modifiers - encryption', () => {
   it('preserves data integrity', async () => PreserveDataIntegrityTest());
 });
 
+interface EncryptionOptions {
+  secretKey: string;
+  algorithm?: string;
+  ivSize?: number;
+}
+
+interface EncryptionMeta {
+  iv: string;
+  authTag?: string;
+}
+
 class TestableEncryptionModifier extends EncryptionModifier {
-  public setOptions(options: { secretKey: string; algorithm?: string; ivSize?: number }) {
+  public setOptions(options: EncryptionOptions) {
     this.options = options;
   }
 
-  public getOptions() {
+  public getOptions(): EncryptionOptions {
     return this.options;
   }
 
-  public getMeta() {
+  public getMeta(): EncryptionMeta {
     return this.meta;
   }
 
-  public setMeta(meta: { iv: string; authTag?: string }) {
+  public setMeta(meta: EncryptionMeta) {
     this.meta = meta;
   }
 }
@@ -53,7 +64,7 @@ async function EncryptAndDecryptStringValuesTest() {
 
   const originalValue = 'sensitive data';
   const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted);
+  const decrypted = modifier.unlock(encrypted) as string;
 
   expect(encrypted).to.be.a('string');
   expect(encrypted).to.not.equal(originalValue);
@@ -71,7 +82,7 @@ async function EncryptAndDecryptObjectValuesTest() {
 
   const originalValue = { name: 'John', age: 30, isActive: true };
   const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted);
+  const decrypted = modifier.unlock(encrypted) as typeof originalValue;
 
   expect(encrypted).to.be.a('string');
   expect(encrypted).to.not.equal(JSON.stringify(originalValue));
@@ -88,7 +99,7 @@ async function EncryptAndDecryptArrayValuesTest() {
 
   const originalValue = ['item1', 'item2', { nested: 'value' }];
   const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted);
+  const decrypted = modifier.unlock(encrypted) as typeof originalValue;
 
   expect(encrypted).to.be.a('string');
   expect(encrypted).to.not.equal(JSON.stringify(originalValue));
@@ -105,7 +116,7 @@ async function UseCustomEncryptionAlgorithmTest() {
 
   const originalValue = 'test data';
   const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted);
+  const decrypted = modifier.unlock(encrypted) as string;
 
   expect(decrypted).to.equal(originalValue);
   expect(modifier.getOptions().algorithm).to.equal('aes-256-cbc');
@@ -122,7 +133,7 @@ async function UseCustomIvSizeTest() {
 
   const originalValue = 'test data';
   const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted);
+  const decrypted = modifier.unlock(encrypted) as string;
 
   expect(decrypted).to.equal(originalValue);
   expect(modifier.getOptions().ivSize).to.equal(16);
@@ -142,7 +153,7 @@ async function HandleEncryptionDecoratorTest() {
       secretKey: '12345678901234567890123456789012',
       algorithm: 'aes-256-cbc',
     })
-    secretData!: any;
+    secretData!: Record<string, unknown>;
   }
 
   const instance = new TestTable();
@@ -177,6 +188,16 @@ async function GenerateUniqueIvForEachEncryptionTest() {
   expect(modifier.unlock(encrypted2)).to.equal(value);
 }
 
+interface ComplexData {
+  string: string;
+  number: number;
+  boolean: boolean;
+  null: null;
+  array: number[];
+  object: { nested: string };
+  date: Date;
+}
+
 async function PreserveDataIntegrityTest() {
   const modifier = new TestableEncryptionModifier();
   modifier.setOptions({
@@ -185,7 +206,7 @@ async function PreserveDataIntegrityTest() {
   });
   modifier.setMeta({ iv: '' });
 
-  const complexData = {
+  const complexData: ComplexData = {
     string: 'text',
     number: 42,
     boolean: true,
@@ -196,7 +217,7 @@ async function PreserveDataIntegrityTest() {
   };
 
   const encrypted = modifier.lock(undefined, complexData);
-  const decrypted = modifier.unlock(encrypted);
+  const decrypted = modifier.unlock(encrypted) as ComplexData;
 
   expect(decrypted).to.deep.equal(complexData);
   expect(typeof decrypted.string).to.equal('string');

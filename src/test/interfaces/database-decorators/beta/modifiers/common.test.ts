@@ -32,19 +32,27 @@ describe('Modifiers - common', () => {
   it('gets modified fields', async () => GetModifiedFieldsTest());
 });
 
+interface TestMeta {
+  test: string;
+}
+
+interface TestOptions {
+  option: number;
+}
+
 async function CreateBasicModifierTest() {
-  class TestModifier extends Modifier<{ test: string }, { option: number }> {
+  class TestModifier extends Modifier<TestMeta, TestOptions> {
     constructor() {
       super();
       this.meta = { test: 'value' };
       this.options = { option: 42 };
     }
 
-    public getMeta() {
+    public getMeta(): TestMeta {
       return this.meta;
     }
 
-    public getOptions() {
+    public getOptions(): TestOptions {
       return this.options;
     }
   }
@@ -55,21 +63,29 @@ async function CreateBasicModifierTest() {
   expect(modifier.getOptions().option).to.equal(42);
 }
 
+interface OneWayMeta {
+  count: number;
+}
+
+interface OneWayOptions {
+  prefix: string;
+}
+
 async function CreateOneWayModifierTest() {
-  class TestOneWayModifier extends OneWayModifier<string, [string], { count: number }, { prefix: string }> {
+  class TestOneWayModifier extends OneWayModifier<string, [string], OneWayMeta, OneWayOptions> {
     public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
-      return `${prefix}_${value}`;
+      return `${prefix}_${String(value)}`;
     }
 
     public test(lockedValue: string, value: unknown, prefix: string): boolean {
       return this.lock(undefined, value, prefix) === lockedValue;
     }
 
-    public setMeta(meta: { count: number }) {
+    public setMeta(meta: OneWayMeta) {
       this.meta = meta;
     }
 
-    public setOptions(options: { prefix: string }) {
+    public setOptions(options: OneWayOptions) {
       this.options = options;
     }
   }
@@ -86,21 +102,29 @@ async function CreateOneWayModifierTest() {
   expect(matchResult).to.equal(true);
 }
 
+interface TwoWayMeta {
+  count: number;
+}
+
+interface TwoWayOptions {
+  prefix: string;
+}
+
 async function CreateTwoWayModifierTest() {
-  class TestTwoWayModifier extends TwoWayModifier<string, [string], { count: number }, { prefix: string }> {
+  class TestTwoWayModifier extends TwoWayModifier<string, [string], TwoWayMeta, TwoWayOptions> {
     public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
-      return `${prefix}_${value}`;
+      return `${prefix}_${String(value)}`;
     }
 
     public unlock(lockedValue: string, prefix: string): unknown {
       return lockedValue.replace(`${prefix}_`, '');
     }
 
-    public setMeta(meta: { count: number }) {
+    public setMeta(meta: TwoWayMeta) {
       this.meta = meta;
     }
 
-    public setOptions(options: { prefix: string }) {
+    public setOptions(options: TwoWayOptions) {
       this.options = options;
     }
   }
@@ -116,8 +140,16 @@ async function CreateTwoWayModifierTest() {
   expect(unlocked).to.equal('value');
 }
 
+interface ContainerMeta {
+  count: number;
+}
+
+interface ContainerOptions {
+  prefix: string;
+}
+
 async function CreateContainerModifierTest() {
-  class TestContainerModifier extends ContainerModifier<{ count: number }, { prefix: string }> {
+  class TestContainerModifier extends ContainerModifier<ContainerMeta, ContainerOptions> {
     constructor() {
       super();
       this.meta = { count: 0 };
@@ -145,10 +177,18 @@ async function CreateContainerModifierTest() {
   expect(unlocked).to.equal('value');
 }
 
+interface TestModifierMeta {
+  count: number;
+}
+
+interface TestModifierOptions {
+  prefix: string;
+}
+
 async function AttachModifierToTableTest() {
-  class TestModifier extends OneWayModifier<string, [], { count: number }, { prefix: string }> {
+  class TestModifier extends OneWayModifier<string, [], TestModifierMeta, TestModifierOptions> {
     public lock(lockedValue: string | undefined, value: unknown): string {
-      return `modified_${value}`;
+      return `modified_${String(value)}`;
     }
   }
   class TestTable extends Table {
@@ -222,9 +262,9 @@ async function ConvertTableToDatabaseDataTest() {
 }
 
 async function UnlockModifierFieldsTest() {
-  class TestModifier extends TwoWayModifier<string, [string], { count: number }, { prefix: string }> {
+  class TestModifier extends TwoWayModifier<string, [string], TestModifierMeta, TestModifierOptions> {
     public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
-      return `${prefix}_${value}`;
+      return `${prefix}_${String(value)}`;
     }
 
     public unlock(lockedValue: string, prefix: string): unknown {
@@ -246,9 +286,9 @@ async function UnlockModifierFieldsTest() {
 }
 
 async function LockModifierFieldsTest() {
-  class TestModifier extends OneWayModifier<string, [string], { count: number }, { prefix: string }> {
+  class TestModifier extends OneWayModifier<string, [string], TestModifierMeta, TestModifierOptions> {
     public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
-      return `${prefix}_${value}`;
+      return `${prefix}_${String(value)}`;
     }
   }
   class TestTable extends Table {
@@ -262,9 +302,9 @@ async function LockModifierFieldsTest() {
 }
 
 async function TestValueAgainstModifierTest() {
-  class TestModifier extends OneWayModifier<string, [string], { count: number }, { prefix: string }> {
+  class TestModifier extends OneWayModifier<string, [string], TestModifierMeta, TestModifierOptions> {
     public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
-      return `${prefix}_${value}`;
+      return `${prefix}_${String(value)}`;
     }
     public test(lockedValue: string, value: unknown, prefix: string): boolean {
       return this.lock(undefined, value, prefix) === lockedValue;
@@ -284,9 +324,9 @@ async function TestValueAgainstModifierTest() {
 }
 
 async function GetModifiedFieldsTest() {
-  class TestModifier extends OneWayModifier<string, [], { count: number }, { prefix: string }> {
+  class TestModifier extends OneWayModifier<string, [], TestModifierMeta, TestModifierOptions> {
     public lock(lockedValue: string | undefined, value: unknown): string {
-      return `modified_${value}`;
+      return `modified_${String(value)}`;
     }
   }
 
