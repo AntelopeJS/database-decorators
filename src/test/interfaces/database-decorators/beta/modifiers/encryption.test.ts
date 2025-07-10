@@ -1,18 +1,23 @@
 import { expect } from 'chai';
 import { Encrypted, EncryptionModifier } from '@ajs.local/database-decorators/beta/modifiers/encryption';
 import { Table } from '@ajs.local/database-decorators/beta/table';
+import { testEnabled, skipTests } from '../../../../config';
 
-describe('Modifiers - encryption', () => {
-  it('creates encryption modifier', async () => CreateEncryptionModifierTest());
-  it('encrypts and decrypts string values', async () => EncryptAndDecryptStringValuesTest());
-  it('encrypts and decrypts object values', async () => EncryptAndDecryptObjectValuesTest());
-  it('encrypts and decrypts array values', async () => EncryptAndDecryptArrayValuesTest());
-  it('uses custom encryption algorithm', async () => UseCustomEncryptionAlgorithmTest());
-  it('uses custom iv size', async () => UseCustomIvSizeTest());
-  it('handles encryption decorator', async () => HandleEncryptionDecoratorTest());
-  it('generates unique iv for each encryption', async () => GenerateUniqueIvForEachEncryptionTest());
-  it('preserves data integrity', async () => PreserveDataIntegrityTest());
-});
+if (testEnabled.modifiers_encryption) {
+  describe('Modifiers - encryption', () => {
+    it('creates encryption modifier', async () => CreateEncryptionModifierTest());
+    it('encrypts and decrypts string values', async () => EncryptAndDecryptStringValuesTest());
+    it('encrypts and decrypts object values', async () => EncryptAndDecryptObjectValuesTest());
+    it('encrypts and decrypts array values', async () => EncryptAndDecryptArrayValuesTest());
+    it('uses custom encryption algorithm', async () => UseCustomEncryptionAlgorithmTest());
+    it('uses custom iv size', async () => UseCustomIvSizeTest());
+    it('handles encryption decorator', async () => HandleEncryptionDecoratorTest());
+    it('generates unique iv for each encryption', async () => GenerateUniqueIvForEachEncryptionTest());
+    it('preserves data integrity', async () => PreserveDataIntegrityTest());
+  });
+} else {
+  skipTests('Modifiers - encryption');
+}
 
 async function CreateEncryptionModifierTest() {
   const Mixed = Table.with(EncryptionModifier);

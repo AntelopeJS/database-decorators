@@ -1,13 +1,18 @@
 import { expect } from 'chai';
 import { DatumStaticMetadata, getMetadata, DeepPartial } from '@ajs.local/database-decorators/beta/common';
+import { testEnabled, skipTests } from '../../../config';
 
-describe('Common - metadata', () => {
-  it('creates metadata with default values', async () => CreateMetadataWithDefaultValuesTest());
-  it('adds index to metadata', async () => AddIndexToMetadataTest());
-  it('retrieves existing metadata', async () => RetrieveExistingMetadataTest());
-  it('creates new metadata when not exists', async () => CreateNewMetadataWhenNotExistsTest());
-  it('handles deep partial types correctly', async () => HandleDeepPartialTypesCorrectlyTest());
-});
+if (testEnabled.common) {
+  describe('Common - metadata', () => {
+    it('creates metadata with default values', async () => CreateMetadataWithDefaultValuesTest());
+    it('adds index to metadata', async () => AddIndexToMetadataTest());
+    it('retrieves existing metadata', async () => RetrieveExistingMetadataTest());
+    it('creates new metadata when not exists', async () => CreateNewMetadataWhenNotExistsTest());
+    it('handles deep partial types correctly', async () => HandleDeepPartialTypesCorrectlyTest());
+  });
+} else {
+  skipTests('Common - metadata');
+}
 
 async function CreateMetadataWithDefaultValuesTest() {
   const metadata = new DatumStaticMetadata();

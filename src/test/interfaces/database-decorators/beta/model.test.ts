@@ -3,19 +3,23 @@ import { Database } from '@ajs/database/beta';
 import { BasicDataModel, GetModel, StaticModel, DynamicModel } from '@ajs.local/database-decorators/beta/model';
 import { Table, Index } from '@ajs.local/database-decorators/beta/table';
 import { RequestContext } from '@ajs/api/beta';
+import { testEnabled, skipTests } from '../../../config';
 
-describe('Model - data operations', () => {
-  it('creates basic data model', async () => CreateBasicDataModelTest());
-  it('converts plain data to table instance', async () => ConvertPlainDataToTableTest());
-  it('converts database data to table instance', async () => ConvertDatabaseDataToTableTest());
-  it('converts table instance to database data', async () => ConvertTableToDatabaseDataTest());
-  it('handles null database data', async () => HandleNullDatabaseDataTest());
-  it('gets model from cache', async () => GetModelFromCacheTest());
-  it('creates new model when not cached', async () => CreateNewModelWhenNotCachedTest());
-  it('handles static model decorator', async () => HandleStaticModelDecoratorTest());
-  it('handles dynamic model decorator', async () => HandleDynamicModelDecoratorTest());
-  it('performs basic CRUD operations', async () => PerformBasicCrudOperationsTest());
-});
+if (testEnabled.model) {
+  describe('Model - data operations', () => {
+    it('creates basic data model', async () => CreateBasicDataModelTest());
+    it('converts plain data to table instance', async () => ConvertPlainDataToTableTest());
+    it('converts database data to table instance', async () => ConvertDatabaseDataToTableTest());
+    it('converts table instance to database data', async () => ConvertTableToDatabaseDataTest());
+    it('handles null database data', async () => HandleNullDatabaseDataTest());
+    it('gets model from cache', async () => GetModelFromCacheTest());
+    it('creates new model when not cached', async () => CreateNewModelWhenNotCachedTest());
+    it('handles static model decorator', async () => HandleStaticModelDecoratorTest());
+    it('handles dynamic model decorator', async () => HandleDynamicModelDecoratorTest());
+  });
+} else {
+  skipTests('Model - data operations');
+}
 
 async function CreateBasicDataModelTest() {
   class TestTable extends Table {

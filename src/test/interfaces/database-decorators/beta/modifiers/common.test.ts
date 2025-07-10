@@ -3,231 +3,215 @@ import {
   attachModifier,
   ContainerModifier,
   fromDatabase,
-  fromPlainData,
   getModifiedFields,
   lock,
   Modifier,
+  ModifiersDynamicMetadata,
   OneWayModifier,
   testValue,
   toDatabase,
-  toPlainData,
   TwoWayModifier,
   unlock,
 } from '@ajs.local/database-decorators/beta/modifiers/common';
 import { Table } from '@ajs.local/database-decorators/beta/table';
+import { getMetadata } from '@ajs.local/database-decorators/beta/common';
+import { testEnabled, skipTests } from '../../../../config';
 
-describe('Modifiers - common', () => {
-  it('creates basic modifier', async () => CreateBasicModifierTest());
-  it('creates one way modifier', async () => CreateOneWayModifierTest());
-  it('creates two way modifier', async () => CreateTwoWayModifierTest());
-  it('creates container modifier', async () => CreateContainerModifierTest());
-  it('attaches modifier to table', async () => AttachModifierToTableTest());
-  it('converts plain data to table instance', async () => ConvertPlainDataToTableTest());
-  it('converts table instance to plain data', async () => ConvertTableToPlainDataTest());
-  it('converts database data to table instance', async () => ConvertDatabaseDataToTableTest());
-  it('converts table instance to database data', async () => ConvertTableToDatabaseDataTest());
-  it('unlocks modifier fields', async () => UnlockModifierFieldsTest());
-  it('locks modifier fields', async () => LockModifierFieldsTest());
-  it('tests value against modifier', async () => TestValueAgainstModifierTest());
-  it('gets modified fields', async () => GetModifiedFieldsTest());
-});
-
-interface TestMeta {
-  test: string;
-}
-
-interface TestOptions {
-  option: number;
+if (testEnabled.modifiers_common) {
+  describe('Modifiers - common', () => {
+    it('creates basic modifier', async () => CreateBasicModifierTest());
+    it('creates one way modifier', async () => CreateOneWayModifierTest());
+    it('creates two way modifier', async () => CreateTwoWayModifierTest());
+    it('creates container modifier', async () => CreateContainerModifierTest());
+    it('attaches OneWayModifier and applies lock()', async () => BasicAttachTest());
+    it('passes options to modifier via attachModifier()', async () => AttachWithOptionsTest());
+    it('attaches multiple modifiers on same field', async () => ChainedModifiersTest());
+    it('throws if adding OneWayModifier after another OneWayModifier', async () => DuplicateOneWayErrorTest());
+    it('converts database data to table instance', async () => ConvertDatabaseDataToTableTest());
+    it('converts table instance to database data', async () => ConvertTableToDatabaseDataTest());
+    it('unlocks modifier fields', async () => UnlockModifierFieldsTest());
+    it('locks modifier fields', async () => LockModifierFieldsTest());
+    it('tests value against modifier', async () => TestValueAgainstModifierTest());
+    it('gets modified fields', async () => GetModifiedFieldsTest());
+  });
+} else {
+  skipTests('Modifiers - common');
 }
 
 async function CreateBasicModifierTest() {
-  class TestModifier extends Modifier<TestMeta, TestOptions> {
-    constructor() {
-      super();
-      this.meta = { test: 'value' };
-      this.options = { option: 42 };
-    }
-
-    public getMeta(): TestMeta {
-      return this.meta;
-    }
-
-    public getOptions(): TestOptions {
-      return this.options;
+  class TestModifier extends Modifier<any, any> {
+    public lock(v: any): any {
+      return v;
     }
   }
 
   const modifier = new TestModifier();
-
-  expect(modifier.getMeta().test).to.equal('value');
-  expect(modifier.getOptions().option).to.equal(42);
-}
-
-interface OneWayMeta {
-  count: number;
-}
-
-interface OneWayOptions {
-  prefix: string;
+  expect(modifier).to.be.instanceOf(Modifier);
 }
 
 async function CreateOneWayModifierTest() {
-  class TestOneWayModifier extends OneWayModifier<string, [string], OneWayMeta, OneWayOptions> {
-    public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
+  class TestOneWayModifier extends OneWayModifier<string, [string]> {
+    lock(_: string | undefined, value: unknown, prefix: string): string {
       return `${prefix}_${String(value)}`;
     }
 
-    public test(lockedValue: string, value: unknown, prefix: string): boolean {
+    test(lockedValue: string, value: unknown, prefix: string): boolean {
       return this.lock(undefined, value, prefix) === lockedValue;
-    }
-
-    public setMeta(meta: OneWayMeta) {
-      this.meta = meta;
-    }
-
-    public setOptions(options: OneWayOptions) {
-      this.options = options;
     }
   }
 
-  const modifier = new TestOneWayModifier();
-  modifier.setMeta({ count: 0 });
-  modifier.setOptions({ prefix: 'test' });
-
-  const result = modifier.lock(undefined, 'value', 'test');
-  expect(result).to.equal('test_value');
-
-  const isMatch = modifier.test('test_value', 'value', 'test');
-  expect(isMatch).to.equal(true);
-}
-
-interface TwoWayMeta {
-  count: number;
-}
-
-interface TwoWayOptions {
-  prefix: string;
+  const mod = new TestOneWayModifier();
+  const locked = mod.lock(undefined, 'val', 'prefix');
+  expect(locked).to.equal('prefix_val');
+  expect(mod.test(locked, 'val', 'prefix')).to.equal(true);
 }
 
 async function CreateTwoWayModifierTest() {
-  class TestTwoWayModifier extends TwoWayModifier<string, [string], TwoWayMeta, TwoWayOptions> {
-    public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
+  class TestTwoWayModifier extends TwoWayModifier<string, [string]> {
+    lock(_: string | undefined, value: unknown, prefix: string): string {
       return `${prefix}_${String(value)}`;
     }
 
-    public unlock(lockedValue: string, prefix: string): unknown {
+    unlock(lockedValue: string, prefix: string): unknown {
       return lockedValue.replace(`${prefix}_`, '');
-    }
-
-    public setMeta(meta: TwoWayMeta) {
-      this.meta = meta;
-    }
-
-    public setOptions(options: TwoWayOptions) {
-      this.options = options;
     }
   }
 
-  const modifier = new TestTwoWayModifier();
-  modifier.setMeta({ count: 0 });
-  modifier.setOptions({ prefix: 'test' });
-
-  const locked = modifier.lock(undefined, 'value', 'test');
-  expect(locked).to.equal('test_value');
-
-  const unlocked = modifier.unlock(locked, 'test');
+  const mod = new TestTwoWayModifier();
+  const locked = mod.lock(undefined, 'value', 'pre');
+  const unlocked = mod.unlock(locked, 'pre');
   expect(unlocked).to.equal('value');
 }
 
-interface ContainerMeta {
-  count: number;
-}
-
-interface ContainerOptions {
-  prefix: string;
-}
-
 async function CreateContainerModifierTest() {
-  class TestContainerModifier extends ContainerModifier<ContainerMeta, ContainerOptions> {
-    constructor() {
-      super();
-      this.meta = { count: 0 };
-      this.options = { prefix: 'test' };
-    }
-
-    public getLock() {
+  class TestContainer extends ContainerModifier {
+    getLock() {
       return this.lock;
     }
-
-    public getUnlock() {
+    getUnlock() {
       return this.unlock;
     }
   }
 
-  const modifier = new TestContainerModifier();
+  const mod = new TestContainer();
+  const lockFn = mod.getLock();
+  const unlockFn = mod.getUnlock();
 
-  const locked = modifier.getLock()(undefined, 'value', 'key1');
-  expect(locked).to.deep.equal({ key1: 'value' });
+  const data1 = lockFn(undefined, 'val', 'key1');
+  expect(data1).to.deep.equal({ key1: 'val' });
 
-  const locked2 = modifier.getLock()(locked, 'value2', 'key2');
-  expect(locked2).to.deep.equal({ key1: 'value', key2: 'value2' });
+  const data2 = lockFn(data1, 'val2', 'key2');
+  expect(data2).to.deep.equal({ key1: 'val', key2: 'val2' });
 
-  const unlocked = modifier.getUnlock()(locked2, 'key1');
-  expect(unlocked).to.equal('value');
+  const result = unlockFn(data2, 'key1');
+  expect(result).to.equal('val');
 }
 
-interface TestModifierMeta {
-  count: number;
-}
-
-interface TestModifierOptions {
-  prefix: string;
-}
-
-async function AttachModifierToTableTest() {
-  class TestModifier extends OneWayModifier<string, [], TestModifierMeta, TestModifierOptions> {
-    public lock(lockedValue: string | undefined, value: unknown): string {
-      return `modified_${String(value)}`;
+async function BasicAttachTest() {
+  class AddPrefix extends OneWayModifier<string, []> {
+    lock(_: string | undefined, value: unknown): string {
+      return `mod_${String(value)}`;
     }
   }
+
   class TestTable extends Table {
     name!: string;
   }
-  attachModifier(TestTable, TestModifier, 'name', { prefix: 'test' });
-  const instance = new TestTable();
-  instance.name = 'original';
-  expect(instance.name).to.equal('modified_original');
+
+  attachModifier(TestTable, AddPrefix, 'name', {});
+  const row = new TestTable();
+  getMetadata(row, ModifiersDynamicMetadata);
+
+  row.name = 'value';
+  expect(row.name).to.equal('value');
+
+  lock(row, AddPrefix, ['name']);
+  row.name = 'value';
+  expect(row.name).to.equal('mod_value');
 }
 
-async function ConvertPlainDataToTableTest() {
-  class TestTable extends Table {
-    name!: string;
-    age!: number;
+async function AttachWithOptionsTest() {
+  interface Opts {
+    suffix: string;
   }
 
-  const plainData = { name: 'John', age: 30 };
-  const instance = fromPlainData(plainData, TestTable);
+  class AddSuffix extends OneWayModifier<string, [], {}, Opts> {
+    lock(_: string | undefined, value: unknown): string {
+      return `${String(value)}${this.options.suffix}`;
+    }
+  }
 
-  expect(instance).to.be.instanceOf(TestTable);
-  expect(instance.name).to.equal('John');
-  expect(instance.age).to.equal(30);
+  class TestTable extends Table {
+    name!: string;
+  }
+
+  attachModifier(TestTable, AddSuffix, 'name', { suffix: '!' });
+  const row = new TestTable();
+  getMetadata(row, ModifiersDynamicMetadata);
+
+  row.name = 'hello';
+  expect(row.name).to.equal('hello');
+
+  lock(row, AddSuffix, ['name']);
+  row.name = 'hello';
+  expect(row.name).to.equal('hello!');
 }
 
-async function ConvertTableToPlainDataTest() {
-  class TestTable extends Table {
-    name!: string;
-    age!: number;
+async function ChainedModifiersTest() {
+  class Prefix extends OneWayModifier<string, []> {
+    lock(_: string | undefined, value: unknown): string {
+      return `pre_${String(value)}`;
+    }
   }
 
-  const instance = new TestTable();
-  instance.name = 'John';
-  instance.age = 30;
+  class Suffix extends TwoWayModifier<string, [], {}, { suffix: string }> {
+    lock(_: string | undefined, value: unknown): string {
+      return `${String(value)}${this.options.suffix}`;
+    }
 
-  const plainData = toPlainData(instance);
+    unlock(lockedValue: string): unknown {
+      return lockedValue.replace(this.options.suffix, '');
+    }
+  }
 
-  expect(plainData.name).to.equal('John');
-  expect(plainData.age).to.equal(30);
-  expect(plainData).to.not.have.property('_internal');
+  class TestTable extends Table {
+    name!: string;
+  }
+
+  attachModifier(TestTable, Prefix, 'name', {});
+  attachModifier(TestTable, Suffix, 'name', { suffix: '!' });
+
+  const row = new TestTable();
+  getMetadata(row, ModifiersDynamicMetadata);
+
+  lock(row, Prefix, ['name']);
+  unlock(row, Suffix, ['name']);
+
+  row.name = 'value';
+  expect(row.name).to.equal('pre_value!');
+}
+
+async function DuplicateOneWayErrorTest() {
+  class Mod1 extends OneWayModifier<string, []> {
+    lock(_: string | undefined, val: unknown): string {
+      return `#${String(val)}`;
+    }
+  }
+
+  class Mod2 extends OneWayModifier<string, []> {
+    lock(_: string | undefined, val: unknown): string {
+      return `@${String(val)}`;
+    }
+  }
+
+  class TestTable extends Table {
+    name!: string;
+  }
+
+  attachModifier(TestTable, Mod1, 'name', {});
+  expect(() => {
+    attachModifier(TestTable, Mod2, 'name', {});
+  }).to.throw(/already has a One-Way Modifier/);
 }
 
 async function ConvertDatabaseDataToTableTest() {
@@ -236,12 +220,12 @@ async function ConvertDatabaseDataToTableTest() {
     age!: number;
   }
 
-  const dbData = { _id: '123', name: 'John', age: 30 };
-  const instance = fromDatabase(dbData, TestTable);
+  const dbRow = { _id: '1', name: 'John', age: 40 };
+  const instance = fromDatabase(dbRow, TestTable);
 
   expect(instance).to.be.instanceOf(TestTable);
   expect(instance.name).to.equal('John');
-  expect(instance.age).to.equal(30);
+  expect(instance.age).to.equal(40);
 }
 
 async function ConvertTableToDatabaseDataTest() {
@@ -251,23 +235,21 @@ async function ConvertTableToDatabaseDataTest() {
   }
 
   const instance = new TestTable();
-  instance.name = 'John';
-  instance.age = 30;
+  instance.name = 'Eva';
+  instance.age = 22;
 
-  const dbData = toDatabase(instance);
-
-  expect(dbData.name).to.equal('John');
-  expect(dbData.age).to.equal(30);
+  const db = toDatabase(instance);
+  expect(db.name).to.equal('Eva');
+  expect(db.age).to.equal(22);
 }
 
 async function UnlockModifierFieldsTest() {
-  class TestModifier extends TwoWayModifier<string, [string], TestModifierMeta, TestModifierOptions> {
-    public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
-      return `${prefix}_${String(value)}`;
+  class TestMod extends TwoWayModifier<string, [string]> {
+    lock(_: string | undefined, v: unknown, p: string): string {
+      return `${p}_${String(v)}`;
     }
-
-    public unlock(lockedValue: string, prefix: string): unknown {
-      return lockedValue.replace(`${prefix}_`, '');
+    unlock(v: string, p: string): unknown {
+      return v.replace(`${p}_`, '');
     }
   }
 
@@ -275,57 +257,69 @@ async function UnlockModifierFieldsTest() {
     name!: string;
   }
 
-  attachModifier(TestTable, TestModifier, 'name', { prefix: 'test' });
+  attachModifier(TestTable, TestMod, 'name', {});
+  const row = new TestTable();
 
-  const instance = new TestTable();
-  unlock(instance, TestModifier, ['name'], 'test');
+  lock(row, TestMod, ['name'], 'test');
+  row.name = 'value';
+  expect(row.name).to.equal('test_value');
 
-  instance.name = 'original';
-  expect(instance.name).to.equal('original');
+  unlock(row, TestMod, ['name'], 'test');
+  expect(row.name).to.equal('value');
 }
 
 async function LockModifierFieldsTest() {
-  class TestModifier extends OneWayModifier<string, [string], TestModifierMeta, TestModifierOptions> {
-    public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
-      return `${prefix}_${String(value)}`;
+  class TestMod extends OneWayModifier<string, [string]> {
+    lock(_: string | undefined, v: unknown, p: string): string {
+      return `${p}_${String(v)}`;
     }
   }
+
   class TestTable extends Table {
     name!: string;
   }
-  attachModifier(TestTable, TestModifier, 'name', { prefix: 'test' });
-  const instance = new TestTable();
-  lock(instance, TestModifier, ['name'], 'test');
-  instance.name = 'original';
-  expect(instance.name).to.equal('test_original');
+
+  attachModifier(TestTable, TestMod, 'name', {});
+  const row = new TestTable();
+
+  row.name = 'init';
+  expect(row.name).to.equal('init');
+
+  lock(row, TestMod, ['name'], 'mod');
+  row.name = 'new_value';
+  expect(row.name).to.equal('mod_new_value');
 }
 
 async function TestValueAgainstModifierTest() {
-  class TestModifier extends OneWayModifier<string, [string], TestModifierMeta, TestModifierOptions> {
-    public lock(lockedValue: string | undefined, value: unknown, prefix: string): string {
-      return `${prefix}_${String(value)}`;
+  class TestMod extends OneWayModifier<string, [string]> {
+    lock(_: string | undefined, v: unknown, p: string): string {
+      return `${p}_${String(v)}`;
     }
-    public test(lockedValue: string, value: unknown, prefix: string): boolean {
-      return this.lock(undefined, value, prefix) === lockedValue;
+    test(l: string, v: unknown, p: string): boolean {
+      return this.lock(undefined, v, p) === l;
     }
   }
+
   class TestTable extends Table {
     name!: string;
   }
-  attachModifier(TestTable, TestModifier, 'name', { prefix: 'test' });
-  const instance = new TestTable();
-  lock(instance, TestModifier, ['name'], 'test');
-  instance.name = 'original';
-  const isMatch = testValue(instance, 'name', 'original');
-  expect(isMatch).to.equal(true);
-  const isNotMatch = testValue(instance, 'name', 'different');
-  expect(isNotMatch).to.equal(false);
+
+  attachModifier(TestTable, TestMod, 'name', {});
+  const row = new TestTable();
+  lock(row, TestMod, ['name'], 't');
+
+  row.name = 'foo';
+  expect(row.name).to.equal('t_foo');
+
+  expect(testValue(row, 'name', 't_foo')).to.equal(true);
+  expect(testValue(row, 'name', 'foo')).to.equal(false);
+  expect(testValue(row, 'name', 't_bar')).to.equal(false);
 }
 
 async function GetModifiedFieldsTest() {
-  class TestModifier extends OneWayModifier<string, [], TestModifierMeta, TestModifierOptions> {
-    public lock(lockedValue: string | undefined, value: unknown): string {
-      return `modified_${String(value)}`;
+  class TestMod extends OneWayModifier<string, []> {
+    lock(_: string | undefined, v: unknown): string {
+      return `mod_${String(v)}`;
     }
   }
 
@@ -334,10 +328,8 @@ async function GetModifiedFieldsTest() {
     age!: number;
   }
 
-  attachModifier(TestTable, TestModifier, 'name', { prefix: 'test' });
-
-  const instance = new TestTable();
-  const modifiedFields = getModifiedFields(instance, TestModifier);
-
-  expect(modifiedFields).to.deep.equal(['name']);
+  attachModifier(TestTable, TestMod, 'name', { prefix: 'mod' });
+  const row = new TestTable();
+  const fields = getModifiedFields(row, TestMod);
+  expect(fields).to.deep.equal(['name']);
 }

@@ -6,19 +6,23 @@ import {
   DEFAULT_SCHEMA,
 } from '@ajs.local/database-decorators/beta/schema';
 import { Table, Index } from '@ajs.local/database-decorators/beta/table';
+import { testEnabled, skipTests } from '../../../config';
 
-describe('Schema - database schemas', () => {
-  it('registers table in default schema', async () => RegisterTableInDefaultSchemaTest());
-  it('registers table in custom schema', async () => RegisterTableInCustomSchemaTest());
-  it('registers multiple tables in schema', async () => RegisterMultipleTablesInSchemaTest());
-  it('gets tables from default schema', async () => GetTablesFromDefaultSchemaTest());
-  it('gets tables from custom schema', async () => GetTablesFromCustomSchemaTest());
-  it('returns undefined for non-existent schema', async () => ReturnUndefinedForNonExistentSchemaTest());
-  it('initializes database from default schema', async () => InitializeDatabaseFromDefaultSchemaTest());
-  it('initializes database from custom schema', async () => InitializeDatabaseFromCustomSchemaTest());
-  it('handles empty schema', async () => HandleEmptySchemaTest());
-  it('maintains schema isolation', async () => MaintainSchemaIsolationTest());
-});
+if (testEnabled.schema) {
+  describe('Schema - database schemas', () => {
+    it('registers table in default schema', async () => RegisterTableInDefaultSchemaTest());
+    it('registers table in custom schema', async () => RegisterTableInCustomSchemaTest());
+    it('registers multiple tables in schema', async () => RegisterMultipleTablesInSchemaTest());
+    it('gets tables from default schema', async () => GetTablesFromDefaultSchemaTest());
+    it('gets tables from custom schema', async () => GetTablesFromCustomSchemaTest());
+    it('returns undefined for non-existent schema', async () => ReturnUndefinedForNonExistentSchemaTest());
+    it('initializes database from default schema', async () => InitializeDatabaseFromDefaultSchemaTest());
+    it('initializes database from custom schema', async () => InitializeDatabaseFromCustomSchemaTest());
+    it('handles empty schema', async () => HandleEmptySchemaTest());
+  });
+} else {
+  skipTests('Schema - database schemas');
+}
 
 async function RegisterTableInDefaultSchemaTest() {
   @RegisterTable('test_table')

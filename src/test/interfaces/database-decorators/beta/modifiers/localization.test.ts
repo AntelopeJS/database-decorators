@@ -1,19 +1,24 @@
 import { expect } from 'chai';
 import { Localized, LocalizationModifier } from '@ajs.local/database-decorators/beta/modifiers/localization';
 import { Table } from '@ajs.local/database-decorators/beta/table';
+import { testEnabled, skipTests } from '../../../../config';
 
-describe('Modifiers - localization', () => {
-  it('creates localization modifier', async () => CreateLocalizationModifierTest());
-  it('stores multiple locale values', async () => StoreMultipleLocaleValuesTest());
-  it('retrieves specific locale value', async () => RetrieveSpecificLocaleValueTest());
-  it('falls back to default locale', async () => FallbackToDefaultLocaleTest());
-  it('handles missing locale gracefully', async () => HandleMissingLocaleGracefullyTest());
-  it('uses custom fallback locale', async () => UseCustomFallbackLocaleTest());
-  it('handles localization decorator', async () => HandleLocalizationDecoratorTest());
-  it('provides localize method through mixin', async () => ProvideLocalizeMethodTest());
-  it('localizes specific fields', async () => LocalizeSpecificFieldsTest());
-  it('maintains data structure integrity', async () => MaintainDataStructureIntegrityTest());
-});
+if (testEnabled.modifiers_localization) {
+  describe('Modifiers - localization', () => {
+    it('creates localization modifier', async () => CreateLocalizationModifierTest());
+    it('stores multiple locale values', async () => StoreMultipleLocaleValuesTest());
+    it('retrieves specific locale value', async () => RetrieveSpecificLocaleValueTest());
+    it('falls back to default locale', async () => FallbackToDefaultLocaleTest());
+    it('handles missing locale gracefully', async () => HandleMissingLocaleGracefullyTest());
+    it('uses custom fallback locale', async () => UseCustomFallbackLocaleTest());
+    it('handles localization decorator', async () => HandleLocalizationDecoratorTest());
+    it('provides localize method through mixin', async () => ProvideLocalizeMethodTest());
+    it('localizes specific fields', async () => LocalizeSpecificFieldsTest());
+    it('maintains data structure integrity', async () => MaintainDataStructureIntegrityTest());
+  });
+} else {
+  skipTests('Modifiers - localization');
+}
 
 interface LocalizationOptions {
   fallbackLocale?: string;
