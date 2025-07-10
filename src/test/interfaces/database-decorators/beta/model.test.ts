@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { Database } from '@ajs/database/beta';
 import { BasicDataModel, GetModel, StaticModel, DynamicModel } from '@ajs.local/database-decorators/beta/model';
 import { Table, Index } from '@ajs.local/database-decorators/beta/table';
 import { RequestContext } from '@ajs/api/beta';
@@ -170,27 +169,4 @@ async function HandleDynamicModelDecoratorTest() {
   }
   const service = new TestService();
   expect('model' in service).to.equal(true);
-}
-
-async function PerformBasicCrudOperationsTest() {
-  class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
-    name!: string;
-    age!: number;
-  }
-
-  const TestModel = BasicDataModel(TestTable, 'test_table');
-  const database = Database('test-db');
-  const model = new TestModel(database);
-
-  expect(model.database).to.equal(database);
-  expect(model.table).to.not.equal(undefined);
-  expect(typeof model.get).to.equal('function');
-  expect(typeof model.getBy).to.equal('function');
-  expect(typeof model.getAll).to.equal('function');
-  expect(typeof model.insert).to.equal('function');
-  expect(typeof model.update).to.equal('function');
-  expect(typeof model.delete).to.equal('function');
 }

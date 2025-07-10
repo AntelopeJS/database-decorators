@@ -122,7 +122,7 @@ async function UseCustomFallbackLocaleTest() {
 }
 
 async function HandleLocalizationDecoratorTest() {
-  class TestTable extends Table {
+  class TestTable extends Table.with(LocalizationModifier) {
     @Localized({ fallbackLocale: 'en' })
     title!: Record<string, string>;
 

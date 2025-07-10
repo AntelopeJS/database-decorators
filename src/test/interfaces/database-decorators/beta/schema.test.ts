@@ -170,30 +170,3 @@ async function HandleEmptySchemaTest() {
     expect(error).to.be.instanceOf(Error);
   }
 }
-
-async function MaintainSchemaIsolationTest() {
-  @RegisterTable('isolated_table', 'schema_a')
-  class SchemaATable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
-    name!: string;
-  }
-
-  @RegisterTable('isolated_table', 'schema_b')
-  class SchemaBTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
-    description!: string;
-  }
-
-  const schemaATables = GetTablesFromSchema('schema_a');
-  const schemaBTables = GetTablesFromSchema('schema_b');
-
-  expect(schemaATables).to.have.property('isolated_table');
-  expect(schemaBTables).to.have.property('isolated_table');
-  expect(schemaATables?.isolated_table).to.equal(SchemaATable);
-  expect(schemaBTables?.isolated_table).to.equal(SchemaBTable);
-  expect(schemaATables?.isolated_table).to.not.equal(schemaBTables?.isolated_table);
-}

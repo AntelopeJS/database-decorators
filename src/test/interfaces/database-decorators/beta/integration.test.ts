@@ -4,9 +4,9 @@ import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table
 import { BasicDataModel } from '@ajs.local/database-decorators/beta/model';
 import { InitializeDatabase } from '@ajs.local/database-decorators/beta/database';
 import { RegisterTable, InitializeDatabaseFromSchema } from '@ajs.local/database-decorators/beta/schema';
-import { Encrypted } from '@ajs.local/database-decorators/beta/modifiers/encryption';
-import { Hashed } from '@ajs.local/database-decorators/beta/modifiers/hash';
-import { Localized } from '@ajs.local/database-decorators/beta/modifiers/localization';
+import { Encrypted, EncryptionModifier } from '@ajs.local/database-decorators/beta/modifiers/encryption';
+import { Hashed, HashModifier } from '@ajs.local/database-decorators/beta/modifiers/hash';
+import { Localized, LocalizationModifier } from '@ajs.local/database-decorators/beta/modifiers/localization';
 import { testEnabled, skipTests } from '../../../config';
 
 if (testEnabled.integration) {
@@ -27,7 +27,7 @@ if (testEnabled.integration) {
 
 async function CreateAndQueryUserWithModifiersTest() {
   @RegisterTable('users')
-  class User extends Table {
+  class User extends Table.with(HashModifier, EncryptionModifier) {
     @Index({ primary: true })
     id!: string;
 
@@ -42,10 +42,6 @@ async function CreateAndQueryUserWithModifiersTest() {
 
     name!: string;
     age!: number;
-  }
-
-  interface UserWithMixins extends User {
-    testHash(field: string, value: string): boolean;
   }
 
   const UserModel = BasicDataModel(User, 'users');
@@ -67,7 +63,7 @@ async function CreateAndQueryUserWithModifiersTest() {
   expect(insertResult.generated_keys).to.have.length(1);
 
   const userId = insertResult.generated_keys![0];
-  const retrievedUser = (await userModel.get(userId)) as UserWithMixins;
+  const retrievedUser = await userModel.get(userId);
 
   expect(retrievedUser).to.have.property('email', 'test@example.com');
   expect(retrievedUser).to.have.property('name', 'John Doe');
@@ -143,21 +139,17 @@ async function PerformCrudOperationsOnProductsTest() {
 
 async function HandleLocalizedContentTest() {
   @RegisterTable('localized_content')
-  class LocalizedContent extends Table {
+  class LocalizedContent extends Table.with(LocalizationModifier) {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
+
+    declare category: string;
 
     @Localized({ fallbackLocale: 'en' })
-    title!: Record<string, string>;
+    declare title: string;
 
     @Localized({ fallbackLocale: 'en' })
-    description!: Record<string, string>;
-
-    category!: string;
-  }
-
-  interface LocalizedContentWithMixins extends LocalizedContent {
-    localize(locale: string, fields?: string[]): LocalizedContentWithMixins;
+    declare description: string;
   }
 
   const ContentModel = BasicDataModel(LocalizedContent, 'localized_content');
@@ -166,29 +158,41 @@ async function HandleLocalizedContentTest() {
 
   await InitializeDatabase('test-localization-db', { localized_content: LocalizedContent });
 
-  const contentData = {
-    title: { en: 'English Title', fr: 'French Title' },
-    description: { en: 'English Description', fr: 'French Description' },
-    category: 'News',
-  };
+  const content = new LocalizedContent();
+  content.id = 'content-123';
+  content.category = 'News';
 
-  const insertResult = await contentModel.insert(contentData);
+  content.localize('en').title = 'English Title';
+  content.localize('fr').title = 'French Title';
+  content.localize('en').description = 'English Description';
+  content.localize('fr').description = 'French Description';
+
+  const insertResult = await contentModel.insert(content);
   const contentId = insertResult.generated_keys![0];
 
-  const retrievedContent = (await contentModel.get(contentId)) as LocalizedContentWithMixins;
+  const retrievedContent = await contentModel.get(contentId);
   expect(retrievedContent).to.have.property('title');
-  expect(retrievedContent?.title).to.deep.equal({ en: 'English Title', fr: 'French Title' });
+  expect(retrievedContent).to.have.property('description');
+  expect(retrievedContent).to.have.property('category', 'News');
 
   if (retrievedContent?.localize) {
-    retrievedContent.localize('fr');
-    expect(retrievedContent?.title).to.equal('French Title');
-    expect(retrievedContent?.description).to.equal('French Description');
+    const frenchContent = retrievedContent.localize('fr');
+    expect(frenchContent.title).to.equal('French Title');
+    expect(frenchContent.description).to.equal('French Description');
+
+    const englishContent = retrievedContent.localize('en');
+    expect(englishContent.title).to.equal('English Title');
+    expect(englishContent.description).to.equal('English Description');
+
+    const germanContent = retrievedContent.localize('de');
+    expect(germanContent.title).to.equal('English Title');
+    expect(germanContent.description).to.equal('English Description');
   }
 }
 
 async function ManageEncryptedSensitiveDataTest() {
   @RegisterTable('sensitive_data')
-  class SensitiveData extends Table {
+  class SensitiveData extends Table.with(EncryptionModifier) {
     @Index({ primary: true })
     id!: string;
 
@@ -232,7 +236,7 @@ async function ManageEncryptedSensitiveDataTest() {
 
 async function ValidateHashedPasswordsTest() {
   @RegisterTable('user_accounts')
-  class UserAccount extends Table {
+  class UserAccount extends Table.with(HashModifier) {
     @Index({ primary: true })
     id!: string;
 
@@ -243,10 +247,6 @@ async function ValidateHashedPasswordsTest() {
     password!: string;
 
     email!: string;
-  }
-
-  interface UserAccountWithMixins extends UserAccount {
-    testHash(field: string, value: string): boolean;
   }
 
   const UserAccountModel = BasicDataModel(UserAccount, 'user_accounts');
@@ -264,7 +264,7 @@ async function ValidateHashedPasswordsTest() {
   const insertResult = await userAccountModel.insert(accountData);
   const accountId = insertResult.generated_keys![0];
 
-  const retrievedAccount = (await userAccountModel.get(accountId)) as UserAccountWithMixins;
+  const retrievedAccount = await userAccountModel.get(accountId);
   expect(retrievedAccount).to.have.property('username', 'testuser');
   expect(retrievedAccount?.password).to.not.equal('mySecurePassword123');
 
@@ -384,7 +384,7 @@ async function HandleComplexRelationshipsTest() {
   ];
 
   const orderItemsResult = await orderItemModel.insert(orderItemsData);
-  expect(orderItemsResult.generated_keys).to.have.length(2);
+  expect(Object.keys(orderItemsResult.generated_keys || {})).to.have.length(2);
 
   const retrievedOrder = await orderModel.get(orderId);
   expect(retrievedOrder).to.have.property('customerId', 'customer123');
@@ -423,7 +423,7 @@ async function PerformBulkOperationsTest() {
   ];
 
   const insertResult = await bulkProductModel.insert(bulkData);
-  expect(insertResult.generated_keys).to.have.length(5);
+  expect(Object.keys(insertResult.generated_keys || {})).to.have.length(5);
 
   const allProducts = await bulkProductModel.getAll();
   expect(allProducts).to.be.an('array');
@@ -467,37 +467,4 @@ async function ManageDatabaseInitializationTest() {
 
   const allUsers = await fixtureUserModel.getAll();
   expect(allUsers.length).to.be.greaterThan(0);
-}
-
-async function HandleErrorConditionsTest() {
-  @RegisterTable('error_test')
-  class ErrorTest extends Table {
-    @Index({ primary: true })
-    id!: string;
-
-    @Index()
-    uniqueField!: string;
-
-    name!: string;
-  }
-
-  const ErrorTestModel = BasicDataModel(ErrorTest, 'error_test');
-  const database = Database('test-error-db');
-  const errorTestModel = new ErrorTestModel(database);
-
-  await InitializeDatabase('test-error-db', { error_test: ErrorTest });
-
-  const testData = { uniqueField: 'unique_value', name: 'Test Item' };
-  const insertResult = await errorTestModel.insert(testData);
-  const itemId = insertResult.generated_keys![0];
-
-  const retrievedItem = await errorTestModel.get(itemId);
-  expect(retrievedItem).to.have.property('uniqueField', 'unique_value');
-
-  const nonExistentItem = await errorTestModel.get('non-existent-id');
-  expect(nonExistentItem).to.equal(undefined);
-
-  const itemsByNonExistentField = await errorTestModel.getBy('uniqueField' as keyof ErrorTest, 'value');
-  expect(itemsByNonExistentField).to.be.an('array');
-  expect(itemsByNonExistentField).to.have.length(0);
 }

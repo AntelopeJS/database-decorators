@@ -13,12 +13,12 @@ export interface TestEnabled {
 
 export const testEnabled: TestEnabled = {
   common: true,
-  database: false,
-  integration: false,
-  model: false,
-  schema: false,
-  table: false,
-  modifiers_common: false,
+  database: true,
+  integration: true,
+  model: true,
+  schema: true,
+  table: true,
+  modifiers_common: true,
   modifiers_encryption: false,
   modifiers_hash: false,
   modifiers_localization: false,
