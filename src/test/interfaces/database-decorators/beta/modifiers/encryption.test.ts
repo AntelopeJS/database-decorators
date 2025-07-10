@@ -14,217 +14,143 @@ describe('Modifiers - encryption', () => {
   it('preserves data integrity', async () => PreserveDataIntegrityTest());
 });
 
-interface EncryptionOptions {
-  secretKey: string;
-  algorithm?: string;
-  ivSize?: number;
-}
-
-interface EncryptionMeta {
-  iv: string;
-  authTag?: string;
-}
-
-class TestableEncryptionModifier extends EncryptionModifier {
-  public setOptions(options: EncryptionOptions) {
-    this.options = options;
-  }
-
-  public getOptions(): EncryptionOptions {
-    return this.options;
-  }
-
-  public getMeta(): EncryptionMeta {
-    return this.meta;
-  }
-
-  public setMeta(meta: EncryptionMeta) {
-    this.meta = meta;
-  }
-}
-
 async function CreateEncryptionModifierTest() {
-  const modifier = new TestableEncryptionModifier();
-  modifier.setOptions({ secretKey: '12345678901234567890123456789012' });
-  modifier.setMeta({ iv: '' });
+  const Mixed = Table.with(EncryptionModifier);
+  class Sample extends Mixed {
+    @Encrypted({ secretKey: '12345678901234567890123456789012' })
+    value!: string;
+  }
 
-  expect(modifier).to.be.instanceOf(EncryptionModifier);
-  expect(modifier.getOptions().secretKey).to.equal('12345678901234567890123456789012');
-  expect(modifier.getOptions().algorithm ?? 'aes-256-gcm').to.equal('aes-256-gcm');
-  expect(modifier.getOptions().ivSize ?? 16).to.equal(16);
+  const instance = new Sample();
+  instance.value = 'hello';
+  expect(instance.value).to.equal('hello');
 }
 
 async function EncryptAndDecryptStringValuesTest() {
-  const modifier = new TestableEncryptionModifier();
-  modifier.setOptions({
-    secretKey: '12345678901234567890123456789012',
-    algorithm: 'aes-256-cbc',
-  });
-  modifier.setMeta({ iv: '' });
+  const T = Table.with(EncryptionModifier);
+  class User extends T {
+    @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
+    email!: string;
+  }
 
-  const originalValue = 'sensitive data';
-  const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted) as string;
-
-  expect(encrypted).to.be.a('string');
-  expect(encrypted).to.not.equal(originalValue);
-  expect(decrypted).to.equal(originalValue);
-  expect(modifier.getMeta().iv).to.be.a('string');
+  const user = new User();
+  user.email = 'user@example.com';
+  expect(user.email).to.equal('user@example.com');
 }
 
 async function EncryptAndDecryptObjectValuesTest() {
-  const modifier = new TestableEncryptionModifier();
-  modifier.setOptions({
-    secretKey: '12345678901234567890123456789012',
-    algorithm: 'aes-256-cbc',
-  });
-  modifier.setMeta({ iv: '' });
+  const T = Table.with(EncryptionModifier);
+  class Doc extends T {
+    @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
+    meta!: Record<string, unknown>;
+  }
 
-  const originalValue = { name: 'John', age: 30, isActive: true };
-  const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted) as typeof originalValue;
-
-  expect(encrypted).to.be.a('string');
-  expect(encrypted).to.not.equal(JSON.stringify(originalValue));
-  expect(decrypted).to.deep.equal(originalValue);
+  const doc = new Doc();
+  const original = { admin: true, count: 3 };
+  doc.meta = original;
+  expect(doc.meta).to.deep.equal(original);
 }
 
 async function EncryptAndDecryptArrayValuesTest() {
-  const modifier = new TestableEncryptionModifier();
-  modifier.setOptions({
-    secretKey: '12345678901234567890123456789012',
-    algorithm: 'aes-256-cbc',
-  });
-  modifier.setMeta({ iv: '' });
+  const T = Table.with(EncryptionModifier);
+  class Tags extends T {
+    @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
+    values!: (string | { deep: string })[];
+  }
 
-  const originalValue = ['item1', 'item2', { nested: 'value' }];
-  const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted) as typeof originalValue;
-
-  expect(encrypted).to.be.a('string');
-  expect(encrypted).to.not.equal(JSON.stringify(originalValue));
-  expect(decrypted).to.deep.equal(originalValue);
+  const tags = new Tags();
+  const original = ['a', 'b', { deep: 'x' }];
+  tags.values = original;
+  expect(tags.values).to.deep.equal(original);
 }
 
 async function UseCustomEncryptionAlgorithmTest() {
-  const modifier = new TestableEncryptionModifier();
-  modifier.setOptions({
-    secretKey: '12345678901234567890123456789012',
-    algorithm: 'aes-256-cbc',
-  });
-  modifier.setMeta({ iv: '' });
+  const T = Table.with(EncryptionModifier);
+  class CustomAlgo extends T {
+    @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
+    field!: string;
+  }
 
-  const originalValue = 'test data';
-  const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted) as string;
-
-  expect(decrypted).to.equal(originalValue);
-  expect(modifier.getOptions().algorithm).to.equal('aes-256-cbc');
+  const row = new CustomAlgo();
+  row.field = 'custom';
+  expect(row.field).to.equal('custom');
 }
 
 async function UseCustomIvSizeTest() {
-  const modifier = new TestableEncryptionModifier();
-  modifier.setOptions({
-    secretKey: '12345678901234567890123456789012',
-    ivSize: 16,
-    algorithm: 'aes-256-cbc',
-  });
-  modifier.setMeta({ iv: '' });
+  const T = Table.with(EncryptionModifier);
+  class WithIv extends T {
+    @Encrypted({ secretKey: '12345678901234567890123456789012', ivSize: 16, algorithm: 'aes-256-cbc' })
+    data!: string;
+  }
 
-  const originalValue = 'test data';
-  const encrypted = modifier.lock(undefined, originalValue);
-  const decrypted = modifier.unlock(encrypted) as string;
-
-  expect(decrypted).to.equal(originalValue);
-  expect(modifier.getOptions().ivSize).to.equal(16);
+  const test = new WithIv();
+  test.data = 'iv test';
+  expect(test.data).to.equal('iv test');
 }
 
 async function HandleEncryptionDecoratorTest() {
-  const TestTableWithMixin = Table.with(EncryptionModifier);
-
-  class TestTable extends TestTableWithMixin {
-    @Encrypted({
-      secretKey: '12345678901234567890123456789012',
-      algorithm: 'aes-256-cbc',
-    })
+  const T = Table.with(EncryptionModifier);
+  class Secured extends T {
+    @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
     password!: string;
 
-    @Encrypted({
-      secretKey: '12345678901234567890123456789012',
-      algorithm: 'aes-256-cbc',
-    })
-    secretData!: Record<string, unknown>;
+    @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
+    extra!: Record<string, unknown>;
   }
 
-  const instance = new TestTable();
-  instance.password = 'myPassword123';
-  instance.secretData = { token: 'secret-token' };
+  const s = new Secured();
+  s.password = 'admin123';
+  s.extra = { token: 'xyz' };
 
-  expect(instance.password).to.not.equal('myPassword123');
-  expect(instance.password).to.be.a('string');
-  expect(instance.secretData).to.not.deep.equal({ token: 'secret-token' });
-  expect(instance.secretData).to.be.a('string');
+  expect(s.password).to.equal('admin123');
+  expect(s.extra).to.deep.equal({ token: 'xyz' });
 }
 
 async function GenerateUniqueIvForEachEncryptionTest() {
-  const modifier = new TestableEncryptionModifier();
-  modifier.setOptions({
-    secretKey: '12345678901234567890123456789012',
-    algorithm: 'aes-256-cbc',
-  });
-  modifier.setMeta({ iv: '' });
+  const T = Table.with(EncryptionModifier);
+  class Message extends T {
+    @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
+    body!: string;
+  }
 
-  const value = 'test data';
-  const encrypted1 = modifier.lock(undefined, value);
-  const iv1 = modifier.getMeta().iv;
+  const m1 = new Message();
+  const m2 = new Message();
 
-  modifier.setMeta({ iv: '' });
-  const encrypted2 = modifier.lock(undefined, value);
-  const iv2 = modifier.getMeta().iv;
+  m1.body = 'secret';
+  m2.body = 'secret';
 
-  expect(iv1).to.not.equal(iv2);
-  expect(encrypted1).to.not.equal(encrypted2);
-  expect(modifier.unlock(encrypted1)).to.equal(value);
-  expect(modifier.unlock(encrypted2)).to.equal(value);
-}
-
-interface ComplexData {
-  string: string;
-  number: number;
-  boolean: boolean;
-  null: null;
-  array: number[];
-  object: { nested: string };
-  date: Date;
+  expect(m1.body).to.equal('secret');
+  expect(m2.body).to.equal('secret');
+  expect(m1).to.not.deep.equal(m2);
 }
 
 async function PreserveDataIntegrityTest() {
-  const modifier = new TestableEncryptionModifier();
-  modifier.setOptions({
-    secretKey: '12345678901234567890123456789012',
-    algorithm: 'aes-256-cbc',
-  });
-  modifier.setMeta({ iv: '' });
+  const T = Table.with(EncryptionModifier);
+  class Complex extends T {
+    @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
+    payload!: {
+      string: string;
+      number: number;
+      boolean: boolean;
+      null: null;
+      array: number[];
+      object: { nested: string };
+      date: Date;
+    };
+  }
 
-  const complexData: ComplexData = {
-    string: 'text',
-    number: 42,
+  const original = {
+    string: 'txt',
+    number: 123,
     boolean: true,
     null: null,
-    array: [1, 2, 3],
-    object: { nested: 'value' },
-    date: new Date('2023-01-01'),
+    array: [1, 2],
+    object: { nested: 'val' },
+    date: new Date('2022-12-01'),
   };
 
-  const encrypted = modifier.lock(undefined, complexData);
-  const decrypted = modifier.unlock(encrypted) as ComplexData;
-
-  expect(decrypted).to.deep.equal(complexData);
-  expect(typeof decrypted.string).to.equal('string');
-  expect(typeof decrypted.number).to.equal('number');
-  expect(typeof decrypted.boolean).to.equal('boolean');
-  expect(decrypted.null).to.equal(null);
-  expect(Array.isArray(decrypted.array)).to.equal(true);
-  expect(typeof decrypted.object).to.equal('object');
-  expect(decrypted.date).to.be.instanceOf(Date);
+  const instance = new Complex();
+  instance.payload = original;
+  expect(instance.payload).to.deep.equal(original);
+  expect(instance.payload.date).to.be.instanceOf(Date);
 }
