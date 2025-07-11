@@ -120,7 +120,7 @@ export class ModifiersDynamicMetadata {
     const list = this.staticMeta[field];
     return (
       !isWriteOnly(list[list.length - 1].modifier) &&
-      !list.some(({ id, modifier }) => 'unlock' in modifier && !(id in this.fields[field]))
+      !list.some(({ id, modifier }) => !(<any>modifier).autounlock && 'unlock' in modifier && !(id in this.fields[field]))
     );
   }
 
@@ -135,9 +135,15 @@ export class ModifiersDynamicMetadata {
     let value = internal.data[field];
     for (const { id, modifier, metaRef } of list) {
       if ('unlock' in modifier && value !== undefined) {
-        value = withRef(internal, id, modifier, metaRef, (modifier: TwoWayModifier<unknown, any[]>) =>
-          modifier.unlock(value, ...this.fields[field][id]),
-        );
+        if (this.fields[field][id]) {
+          value = withRef(internal, id, modifier, metaRef, (modifier: TwoWayModifier<unknown, any[]>) =>
+            modifier.unlock(value, ...this.fields[field][id]),
+          );
+        } else if ((<any>modifier).autounlock) {
+          value = withRef(internal, id, modifier, metaRef, (modifier: TwoWayModifier<unknown, any[]>) =>
+            modifier.unlock(value),
+          );
+        }
       }
     }
     return value;

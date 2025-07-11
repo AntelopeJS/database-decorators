@@ -19,18 +19,24 @@ type Meta = { iv: string; authTag?: string };
  * These fields are stored encrypted in the database.
  */
 export class EncryptionModifier extends TwoWayModifier<string, [], Meta, Options> {
+  readonly autolock = true;
+
   public override lock(locked_value: string | undefined, value: unknown) {
     const iv = randomBytes(this.options.ivSize || 16);
     const cipher = createCipheriv(this.options.algorithm || 'aes-256-gcm', this.options.secretKey, iv);
-    const authTag: string | undefined =
-      'getAuthTag' in cipher ? (<CipherCCM>cipher).getAuthTag().toString('base64') : undefined;
     const encrypted = Buffer.concat([cipher.update(JSON.stringify(value)), cipher.final()]).toString('base64');
 
     this.meta.iv = iv.toString('base64');
-    this.meta.authTag = authTag;
+    try {
+      const authTag: string | undefined =
+        'getAuthTag' in cipher ? (<CipherCCM>cipher).getAuthTag().toString('base64') : undefined;
+      this.meta.authTag = authTag;
+    } catch (_) {}
 
     return encrypted;
   }
+
+  readonly autounlock = true;
 
   public override unlock(locked_value: string) {
     const decipher = createDecipheriv(
