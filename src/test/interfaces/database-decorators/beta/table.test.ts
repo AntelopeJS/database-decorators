@@ -2,20 +2,15 @@ import { expect } from 'chai';
 import { Table, Index, Fixture, TableMetaSymbol, TableRefSymbol } from '@ajs.local/database-decorators/beta/table';
 import { DatumStaticMetadata, getMetadata } from '@ajs.local/database-decorators/beta/common';
 import { MixinSymbol } from '@ajs.local/database-decorators/beta/modifiers/common';
-import { testEnabled, skipTests } from '../../../config';
 
-if (testEnabled.table) {
-  describe('Table - decorators', () => {
-    it('creates table with primary index', async () => CreateTableWithPrimaryIndexTest());
-    it('creates table with multiple indexes', async () => CreateTableWithMultipleIndexesTest());
-    it('creates table with grouped indexes', async () => CreateTableWithGroupedIndexesTest());
-    it('creates table with fixture data', async () => CreateTableWithFixtureDataTest());
-    it('combines table with mixins', async () => CombineTableWithMixinsTest());
-    it('handles table metadata symbols', async () => HandleTableMetadataSymbolsTest());
-  });
-} else {
-  skipTests('Table - decorators');
-}
+describe('Table - decorators', () => {
+  it('creates table with primary index', async () => CreateTableWithPrimaryIndexTest());
+  it('creates table with multiple indexes', async () => CreateTableWithMultipleIndexesTest());
+  it('creates table with grouped indexes', async () => CreateTableWithGroupedIndexesTest());
+  it('creates table with fixture data', async () => CreateTableWithFixtureDataTest());
+  it('combines table with mixins', async () => CombineTableWithMixinsTest());
+  it('handles table metadata symbols', async () => HandleTableMetadataSymbolsTest());
+});
 
 async function CreateTableWithPrimaryIndexTest() {
   class TestTable extends Table {

@@ -1,25 +1,19 @@
 import { expect } from 'chai';
 import { Hashed, HashModifier } from '@ajs.local/database-decorators/beta/modifiers/hash';
 import { Table } from '@ajs.local/database-decorators/beta/table';
-import { testEnabled, skipTests } from '../../../../config';
-import * as console from 'node:console';
 
-if (testEnabled.modifiers_hash) {
-  describe('Modifiers - hash', () => {
-    it('creates hash modifier', async () => CreateHashModifierTest());
-    it('hashes string values', async () => HashStringValuesTest());
-    it('hashes object values', async () => HashObjectValuesTest());
-    it('handles undefined values', async () => HandleUndefinedValuesTest());
-    it('uses custom hash algorithm', async () => UseCustomHashAlgorithmTest());
-    it('generates unique salt for each field', async () => GenerateUniqueSaltForEachFieldTest());
-    it('handles hash decorator', async () => HandleHashDecoratorTest());
-    it('tests hash values correctly', async () => TestHashValuesTest());
-    it('provides testHash method through mixin', async () => ProvideTestHashMethodTest());
-    it('maintains hash consistency', async () => MaintainHashConsistencyTest());
-  });
-} else {
-  skipTests('Modifiers - hash');
-}
+describe('Modifiers - hash', () => {
+  it('creates hash modifier', async () => CreateHashModifierTest());
+  it('hashes string values', async () => HashStringValuesTest());
+  it('hashes object values', async () => HashObjectValuesTest());
+  it('handles undefined values', async () => HandleUndefinedValuesTest());
+  it('uses custom hash algorithm', async () => UseCustomHashAlgorithmTest());
+  it('generates unique salt for each field', async () => GenerateUniqueSaltForEachFieldTest());
+  it('handles hash decorator', async () => HandleHashDecoratorTest());
+  it('tests hash values correctly', async () => TestHashValuesTest());
+  it('provides testHash method through mixin', async () => ProvideTestHashMethodTest());
+  it('maintains hash consistency', async () => MaintainHashConsistencyTest());
+});
 
 interface HashOptions {
   algorithm?: string;

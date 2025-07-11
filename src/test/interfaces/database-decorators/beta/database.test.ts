@@ -1,24 +1,19 @@
 import { expect } from 'chai';
 import { InitializeDatabase } from '@ajs.local/database-decorators/beta/database';
 import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table';
-import { testEnabled, skipTests } from '../../../config';
 
-if (testEnabled.database) {
-  describe('Database - initialization', () => {
-    it('initializes new database', async () => InitializeNewDatabaseTest());
-    it('handles existing database', async () => HandleExistingDatabaseTest());
-    it('creates tables with primary keys', async () => CreateTablesWithPrimaryKeysTest());
-    it('creates tables with indexes', async () => CreateTablesWithIndexesTest());
-    it('creates tables with grouped indexes', async () => CreateTablesWithGroupedIndexesTest());
-    it('creates tables with fixture data', async () => CreateTablesWithFixtureDataTest());
-    it('handles multiple tables', async () => HandleMultipleTablesTest());
-    it('identifies old tables', async () => IdentifyOldTablesTest());
-    it('returns correct status information', async () => ReturnCorrectStatusInformationTest());
-    it('handles empty table list', async () => HandleEmptyTableListTest());
-  });
-} else {
-  skipTests('Database - initialization');
-}
+describe('Database - initialization', () => {
+  it('initializes new database', async () => InitializeNewDatabaseTest());
+  it('handles existing database', async () => HandleExistingDatabaseTest());
+  it('creates tables with primary keys', async () => CreateTablesWithPrimaryKeysTest());
+  it('creates tables with indexes', async () => CreateTablesWithIndexesTest());
+  it('creates tables with grouped indexes', async () => CreateTablesWithGroupedIndexesTest());
+  it('creates tables with fixture data', async () => CreateTablesWithFixtureDataTest());
+  it('handles multiple tables', async () => HandleMultipleTablesTest());
+  it('identifies old tables', async () => IdentifyOldTablesTest());
+  it('returns correct status information', async () => ReturnCorrectStatusInformationTest());
+  it('handles empty table list', async () => HandleEmptyTableListTest());
+});
 
 async function InitializeNewDatabaseTest() {
   class TestTable extends Table {

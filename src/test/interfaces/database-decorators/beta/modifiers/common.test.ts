@@ -15,27 +15,22 @@ import {
 } from '@ajs.local/database-decorators/beta/modifiers/common';
 import { Table } from '@ajs.local/database-decorators/beta/table';
 import { getMetadata } from '@ajs.local/database-decorators/beta/common';
-import { testEnabled, skipTests } from '../../../../config';
 
-if (testEnabled.modifiers_common) {
-  describe('Modifiers - common', () => {
-    it('creates basic modifier', async () => CreateBasicModifierTest());
-    it('creates one way modifier', async () => CreateOneWayModifierTest());
-    it('creates two way modifier', async () => CreateTwoWayModifierTest());
-    it('creates container modifier', async () => CreateContainerModifierTest());
-    it('passes options to modifier via attachModifier()', async () => AttachWithOptionsTest());
-    it('attaches multiple modifiers on same field', async () => ChainedModifiersTest());
-    it('throws if adding OneWayModifier after another OneWayModifier', async () => DuplicateOneWayErrorTest());
-    it('converts database data to table instance', async () => ConvertDatabaseDataToTableTest());
-    it('converts table instance to database data', async () => ConvertTableToDatabaseDataTest());
-    it('unlocks modifier fields', async () => UnlockModifierFieldsTest());
-    it('locks modifier fields', async () => LockModifierFieldsTest());
-    it('tests value against modifier', async () => TestValueAgainstModifierTest());
-    it('gets modified fields', async () => GetModifiedFieldsTest());
-  });
-} else {
-  skipTests('Modifiers - common');
-}
+describe('Modifiers - common', () => {
+  it('creates basic modifier', async () => CreateBasicModifierTest());
+  it('creates one way modifier', async () => CreateOneWayModifierTest());
+  it('creates two way modifier', async () => CreateTwoWayModifierTest());
+  it('creates container modifier', async () => CreateContainerModifierTest());
+  it('passes options to modifier via attachModifier()', async () => AttachWithOptionsTest());
+  it('attaches multiple modifiers on same field', async () => ChainedModifiersTest());
+  it('throws if adding OneWayModifier after another OneWayModifier', async () => DuplicateOneWayErrorTest());
+  it('converts database data to table instance', async () => ConvertDatabaseDataToTableTest());
+  it('converts table instance to database data', async () => ConvertTableToDatabaseDataTest());
+  it('unlocks modifier fields', async () => UnlockModifierFieldsTest());
+  it('locks modifier fields', async () => LockModifierFieldsTest());
+  it('tests value against modifier', async () => TestValueAgainstModifierTest());
+  it('gets modified fields', async () => GetModifiedFieldsTest());
+});
 
 async function CreateBasicModifierTest() {
   class TestModifier extends Modifier<any, any> {

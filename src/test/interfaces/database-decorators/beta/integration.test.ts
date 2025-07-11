@@ -7,23 +7,18 @@ import { RegisterTable, InitializeDatabaseFromSchema } from '@ajs.local/database
 import { Encrypted, EncryptionModifier } from '@ajs.local/database-decorators/beta/modifiers/encryption';
 import { Hashed, HashModifier } from '@ajs.local/database-decorators/beta/modifiers/hash';
 import { Localized, LocalizationModifier } from '@ajs.local/database-decorators/beta/modifiers/localization';
-import { testEnabled, skipTests } from '../../../config';
 
-if (testEnabled.integration) {
-  describe('Integration - real database operations', () => {
-    it('creates and queries user with modifiers', async () => CreateAndQueryUserWithModifiersTest());
-    it('performs CRUD operations on products', async () => PerformCrudOperationsOnProductsTest());
-    it('handles localized content', async () => HandleLocalizedContentTest());
-    it('manages encrypted sensitive data', async () => ManageEncryptedSensitiveDataTest());
-    it('validates hashed passwords', async () => ValidateHashedPasswordsTest());
-    it('works with schema registration', async () => WorkWithSchemaRegistrationTest());
-    it('handles complex relationships', async () => HandleComplexRelationshipsTest());
-    it('performs bulk operations', async () => PerformBulkOperationsTest());
-    it('manages database initialization', async () => ManageDatabaseInitializationTest());
-  });
-} else {
-  skipTests('Integration - real database operations');
-}
+describe('Integration - real database operations', () => {
+  it('creates and queries user with modifiers', async () => CreateAndQueryUserWithModifiersTest());
+  it('performs CRUD operations on products', async () => PerformCrudOperationsOnProductsTest());
+  it('handles localized content', async () => HandleLocalizedContentTest());
+  it('manages encrypted sensitive data', async () => ManageEncryptedSensitiveDataTest());
+  it('validates hashed passwords', async () => ValidateHashedPasswordsTest());
+  it('works with schema registration', async () => WorkWithSchemaRegistrationTest());
+  it('handles complex relationships', async () => HandleComplexRelationshipsTest());
+  it('performs bulk operations', async () => PerformBulkOperationsTest());
+  it('manages database initialization', async () => ManageDatabaseInitializationTest());
+});
 
 async function CreateAndQueryUserWithModifiersTest() {
   @RegisterTable('users')

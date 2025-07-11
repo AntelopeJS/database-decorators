@@ -120,7 +120,9 @@ export class ModifiersDynamicMetadata {
     const list = this.staticMeta[field];
     return (
       !isWriteOnly(list[list.length - 1].modifier) &&
-      !list.some(({ id, modifier }) => !(<any>modifier).autounlock && 'unlock' in modifier && !(id in this.fields[field]))
+      !list.some(
+        ({ id, modifier }) => !(<any>modifier).autounlock && 'unlock' in modifier && !(id in this.fields[field]),
+      )
     );
   }
 
