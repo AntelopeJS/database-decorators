@@ -11,42 +11,42 @@ type Options = {
   /** Initialization Vector size. */
   ivSize?: number;
 };
-type Meta = { iv: string; authTag?: string };
+type Meta = {};
+type LockedType = [ciphertext: string, iv: string, authTag?: string];
 
 /**
  * Encryption modifier. enables the use of {@link Encrypted} on table fields.
  *
  * These fields are stored encrypted in the database.
  */
-export class EncryptionModifier extends TwoWayModifier<string, [], Meta, Options> {
+export class EncryptionModifier extends TwoWayModifier<LockedType, [], Meta, Options> {
   readonly autolock = true;
 
-  public override lock(locked_value: string | undefined, value: unknown) {
+  public override lock(_locked_value: LockedType | undefined, value: unknown): LockedType {
     const iv = randomBytes(this.options.ivSize || 16);
     const cipher = createCipheriv(this.options.algorithm || 'aes-256-gcm', this.options.secretKey, iv);
     const encrypted = Buffer.concat([cipher.update(JSON.stringify(value)), cipher.final()]).toString('base64');
 
-    this.meta.iv = iv.toString('base64');
+    let authTag: string | undefined;
     try {
-      const authTag: string | undefined =
+      authTag =
         'getAuthTag' in cipher ? (<CipherCCM>cipher).getAuthTag().toString('base64') : undefined;
-      this.meta.authTag = authTag;
     } catch (_) {}
 
-    return encrypted;
+    return [encrypted, iv.toString('base64'), authTag];
   }
 
   readonly autounlock = true;
 
-  public override unlock(locked_value: string) {
+  public override unlock([locked_value, iv_str, authTag]: LockedType) {
     const decipher = createDecipheriv(
       this.options.algorithm || 'aes-256-gcm',
       this.options.secretKey,
-      Buffer.from(this.meta.iv, 'base64'),
+      Buffer.from(iv_str, 'base64'),
     );
 
-    if ('setAuthTag' in decipher && this.meta.authTag) {
-      (<DecipherCCM>decipher).setAuthTag(Buffer.from(this.meta.authTag, 'base64'));
+    if ('setAuthTag' in decipher && authTag) {
+      (<DecipherCCM>decipher).setAuthTag(Buffer.from(authTag, 'base64'));
     }
 
     return JSON.parse(
@@ -54,7 +54,7 @@ export class EncryptionModifier extends TwoWayModifier<string, [], Meta, Options
     );
   }
 
-  public override unlockrequest(data: DatabaseDev.ValueProxy.Proxy<string>): DatabaseDev.ValueProxy.Proxy<unknown> {
+  public override unlockrequest(data: DatabaseDev.ValueProxy.Proxy<LockedType>): DatabaseDev.ValueProxy.Proxy<unknown> {
     return data;
   }
 
