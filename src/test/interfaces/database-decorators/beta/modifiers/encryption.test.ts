@@ -23,7 +23,7 @@ async function CreateEncryptionModifierTest() {
   const Mixed = Table.with(EncryptionModifier);
   class Sample extends Mixed {
     @Encrypted({ secretKey: '12345678901234567890123456789012' })
-    value!: string;
+    declare value: string;
   }
 
   const instance = new Sample();
@@ -32,10 +32,9 @@ async function CreateEncryptionModifierTest() {
 }
 
 async function EncryptAndDecryptStringValuesTest() {
-  const T = Table.with(EncryptionModifier);
-  class User extends T {
+  class User extends Table.with(EncryptionModifier) {
     @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
-    email!: string;
+    declare email: string;
   }
 
   const user = new User();
@@ -44,10 +43,9 @@ async function EncryptAndDecryptStringValuesTest() {
 }
 
 async function EncryptAndDecryptObjectValuesTest() {
-  const T = Table.with(EncryptionModifier);
-  class Doc extends T {
+  class Doc extends Table.with(EncryptionModifier) {
     @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
-    meta!: Record<string, unknown>;
+    declare meta: Record<string, unknown>;
   }
 
   const doc = new Doc();
@@ -57,10 +55,9 @@ async function EncryptAndDecryptObjectValuesTest() {
 }
 
 async function EncryptAndDecryptArrayValuesTest() {
-  const T = Table.with(EncryptionModifier);
-  class Tags extends T {
+  class Tags extends Table.with(EncryptionModifier) {
     @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
-    values!: (string | { deep: string })[];
+    declare values: (string | { deep: string })[];
   }
 
   const tags = new Tags();
@@ -70,10 +67,9 @@ async function EncryptAndDecryptArrayValuesTest() {
 }
 
 async function UseCustomEncryptionAlgorithmTest() {
-  const T = Table.with(EncryptionModifier);
-  class CustomAlgo extends T {
+  class CustomAlgo extends Table.with(EncryptionModifier) {
     @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
-    field!: string;
+    declare field: string;
   }
 
   const row = new CustomAlgo();
@@ -82,10 +78,9 @@ async function UseCustomEncryptionAlgorithmTest() {
 }
 
 async function UseCustomIvSizeTest() {
-  const T = Table.with(EncryptionModifier);
-  class WithIv extends T {
+  class WithIv extends Table.with(EncryptionModifier) {
     @Encrypted({ secretKey: '12345678901234567890123456789012', ivSize: 16, algorithm: 'aes-256-cbc' })
-    data!: string;
+    declare data: string;
   }
 
   const test = new WithIv();
@@ -94,30 +89,27 @@ async function UseCustomIvSizeTest() {
 }
 
 async function HandleEncryptionDecoratorTest() {
-  const T = Table.with(EncryptionModifier);
-  class Secured extends T {
+  class Secured extends Table.with(EncryptionModifier) {
     @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
-    password!: string;
+    declare password: string;
 
     @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
-    extra!: Record<string, unknown>;
+    declare extra: Record<string, unknown>;
   }
 
-  const s = new Secured();
-  s.password = 'admin123';
-  s.extra = { token: 'xyz' };
+  const secured = new Secured();
+  secured.password = 'admin123';
+  secured.extra = { token: 'xyz' };
 
-  expect(s.password).to.equal('admin123');
-  expect(s.extra).to.deep.equal({ token: 'xyz' });
+  expect(secured.password).to.equal('admin123');
+  expect(secured.extra).to.deep.equal({ token: 'xyz' });
 }
 
 async function GenerateUniqueIvForEachEncryptionTest() {
-  const T = Table.with(EncryptionModifier);
-  class Message extends T {
+  class Message extends Table.with(EncryptionModifier) {
     @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
-    body!: string;
+    declare body: string;
   }
-
   const m1 = new Message();
   const m2 = new Message();
 
@@ -130,10 +122,9 @@ async function GenerateUniqueIvForEachEncryptionTest() {
 }
 
 async function PreserveDataIntegrityTest() {
-  const T = Table.with(EncryptionModifier);
-  class Complex extends T {
+  class Complex extends Table.with(EncryptionModifier) {
     @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
-    payload!: {
+    declare payload: {
       string: string;
       number: number;
       boolean: boolean;

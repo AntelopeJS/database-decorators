@@ -29,19 +29,19 @@ async function CreateAndQueryUserWithModifiersTest() {
   @RegisterTable('users')
   class User extends Table.with(HashModifier, EncryptionModifier) {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    email!: string;
+    declare email: string;
 
     @Hashed({ algorithm: 'sha256' })
-    password!: string;
+    declare password: string;
 
     @Encrypted({ secretKey: '12345678901234567890123456789012' })
-    secretData!: Record<string, unknown>;
+    declare secretData: Record<string, unknown>;
 
-    name!: string;
-    age!: number;
+    declare name: string;
+    declare age: number;
   }
 
   const UserModel = BasicDataModel(User, 'users');
@@ -90,17 +90,17 @@ async function PerformCrudOperationsOnProductsTest() {
   @RegisterTable('products')
   class Product extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    name!: string;
+    declare name: string;
 
     @Index()
-    category!: string;
+    declare category: string;
 
-    price!: number;
-    stockQuantity!: number;
-    isActive!: boolean;
+    declare price: number;
+    declare stockQuantity: number;
+    declare isActive: boolean;
   }
 
   const ProductModel = BasicDataModel(Product, 'products');
@@ -194,15 +194,15 @@ async function ManageEncryptedSensitiveDataTest() {
   @RegisterTable('sensitive_data')
   class SensitiveData extends Table.with(EncryptionModifier) {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Encrypted({ secretKey: '12345678901234567890123456789012' })
-    creditCard!: string;
+    declare creditCard: string;
 
     @Encrypted({ secretKey: '12345678901234567890123456789012' })
-    ssn!: string;
+    declare ssn: string;
 
-    userId!: string;
+    declare userId: string;
   }
 
   const SensitiveDataModel = BasicDataModel(SensitiveData, 'sensitive_data');
@@ -238,15 +238,15 @@ async function ValidateHashedPasswordsTest() {
   @RegisterTable('user_accounts')
   class UserAccount extends Table.with(HashModifier) {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    username!: string;
+    declare username: string;
 
     @Hashed({ algorithm: 'sha256' })
-    password!: string;
+    declare password: string;
 
-    email!: string;
+    declare email: string;
   }
 
   const UserAccountModel = BasicDataModel(UserAccount, 'user_accounts');
@@ -281,23 +281,23 @@ async function WorkWithSchemaRegistrationTest() {
   @RegisterTable('schema_users', 'test_schema')
   class SchemaUser extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    email!: string;
+    declare email: string;
 
-    name!: string;
+    declare name: string;
   }
 
   @RegisterTable('schema_products', 'test_schema')
   class SchemaProduct extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    name!: string;
+    declare name: string;
 
-    price!: number;
+    declare price: number;
   }
 
   const databaseName = 'test-schema-integration-db';
@@ -332,31 +332,31 @@ async function HandleComplexRelationshipsTest() {
   @RegisterTable('orders')
   class Order extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    customerId!: string;
+    declare customerId: string;
 
     @Index()
-    orderDate!: Date;
+    declare orderDate: Date;
 
-    totalAmount!: number;
-    status!: string;
+    declare totalAmount: number;
+    declare status: string;
   }
 
   @RegisterTable('order_items')
   class OrderItem extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    orderId!: string;
+    declare orderId: string;
 
     @Index()
-    productId!: string;
+    declare productId: string;
 
-    quantity!: number;
-    unitPrice!: number;
+    declare quantity: number;
+    declare unitPrice: number;
   }
 
   const OrderModel = BasicDataModel(Order, 'orders');
@@ -399,13 +399,13 @@ async function PerformBulkOperationsTest() {
   @RegisterTable('bulk_products')
   class BulkProduct extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    category!: string;
+    declare category: string;
 
-    name!: string;
-    price!: number;
+    declare name: string;
+    declare price: number;
   }
 
   const BulkProductModel = BasicDataModel(BulkProduct, 'bulk_products');
@@ -446,12 +446,12 @@ async function ManageDatabaseInitializationTest() {
   @RegisterTable('fixture_users')
   class FixtureUser extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    email!: string;
+    declare email: string;
 
-    name!: string;
+    declare name: string;
   }
 
   const databaseName = 'test-fixture-db';

@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { Hashed, HashModifier } from '@ajs.local/database-decorators/beta/modifiers/hash';
 import { Table } from '@ajs.local/database-decorators/beta/table';
 import { testEnabled, skipTests } from '../../../../config';
+import * as console from 'node:console';
 
 if (testEnabled.modifiers_hash) {
   describe('Modifiers - hash', () => {
@@ -121,18 +122,16 @@ async function GenerateUniqueSaltForEachFieldTest() {
 }
 
 async function HandleHashDecoratorTest() {
-  const TestTableWithMixin = Table.with(HashModifier);
-
-  class TestTable extends TestTableWithMixin {
+  class TestTable extends Table.with(HashModifier) {
     @Hashed({ algorithm: 'sha256' })
-    password!: string;
+    declare password: string;
   }
 
   const instance = new TestTable();
   instance.password = 'myPassword123';
 
-  expect(instance.password).to.not.equal('myPassword123');
-  expect(instance.password).to.be.a('string');
+  expect(instance.testHash('password', 'myPassword123')).to.equal(true);
+  expect(instance.testHash('password', 'notMyPassword')).to.equal(false);
 }
 
 async function TestHashValuesTest() {
@@ -160,7 +159,7 @@ async function ProvideTestHashMethodTest() {
 
   class TestTable extends TestTableWithMixin {
     @Hashed({ algorithm: 'sha256' })
-    password!: string;
+    declare password: string;
   }
 
   const instance = new TestTable() as TestTableWithHash;
@@ -177,6 +176,7 @@ async function ProvideTestHashMethodTest() {
 
 async function MaintainHashConsistencyTest() {
   const modifier = new TestableHashModifier();
+  modifier.setMeta({});
   modifier.setOptions({ algorithm: 'sha256' });
 
   const originalValue = 'consistent data';

@@ -124,18 +124,21 @@ async function UseCustomFallbackLocaleTest() {
 async function HandleLocalizationDecoratorTest() {
   class TestTable extends Table.with(LocalizationModifier) {
     @Localized({ fallbackLocale: 'en' })
-    title!: Record<string, string>;
+    declare title: string;
 
     @Localized({ fallbackLocale: 'fr' })
-    description!: Record<string, string>;
+    declare description: string;
   }
 
   const instance = new TestTable();
-  instance.title = { en: 'English Title' };
-  instance.description = { fr: 'French Description' };
+  instance.localize('fr').title = 'French Title';
+  instance.localize('fr').description = 'French Description';
+  instance.localize('en').title = 'English Title';
+  instance.localize('en').description = 'English Description';
 
-  expect(instance.title).to.deep.equal({ en: 'English Title' });
-  expect(instance.description).to.deep.equal({ fr: 'French Description' });
+  instance.localize('be');
+  expect(instance.title).to.equal('English Title');
+  expect(instance.description).to.equal('French Description');
 }
 
 async function ProvideLocalizeMethodTest() {
@@ -143,10 +146,10 @@ async function ProvideLocalizeMethodTest() {
 
   class TestTable extends TestTableWithMixin {
     @Localized({ fallbackLocale: 'en' })
-    title!: string;
+    declare title: string;
 
     @Localized({ fallbackLocale: 'en' })
-    description!: string;
+    declare description: string;
   }
 
   const instance = new TestTable();
@@ -167,13 +170,13 @@ async function LocalizeSpecificFieldsTest() {
 
   class TestTable extends TestTableWithMixin {
     @Localized({ fallbackLocale: 'en' })
-    title!: string;
+    declare title: string;
 
     @Localized({ fallbackLocale: 'en' })
-    description!: string;
+    declare description: string;
 
     @Localized({ fallbackLocale: 'en' })
-    content!: string;
+    declare content: string;
   }
 
   const instance = new TestTable();

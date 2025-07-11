@@ -23,9 +23,9 @@ if (testEnabled.database) {
 async function InitializeNewDatabaseTest() {
   class TestTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
-    name!: string;
+    declare name: string;
   }
 
   const tables = { test_table: TestTable };
@@ -41,9 +41,9 @@ async function InitializeNewDatabaseTest() {
 async function HandleExistingDatabaseTest() {
   class TestTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
-    name!: string;
+    declare name: string;
   }
 
   const tables = { test_table: TestTable };
@@ -59,9 +59,9 @@ async function HandleExistingDatabaseTest() {
 async function CreateTablesWithPrimaryKeysTest() {
   class TestTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
-    name!: string;
+    declare name: string;
   }
 
   const tables = { test_table: TestTable };
@@ -76,13 +76,13 @@ async function CreateTablesWithPrimaryKeysTest() {
 async function CreateTablesWithIndexesTest() {
   class TestTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    name!: string;
+    declare name: string;
 
     @Index()
-    email!: string;
+    declare email: string;
   }
 
   const tables = { test_table: TestTable };
@@ -96,16 +96,16 @@ async function CreateTablesWithIndexesTest() {
 async function CreateTablesWithGroupedIndexesTest() {
   class TestTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index({ group: 'user_search' })
-    name!: string;
+    declare name: string;
 
     @Index({ group: 'user_search' })
-    email!: string;
+    declare email: string;
 
     @Index({ group: 'age_range' })
-    age!: number;
+    declare age: number;
   }
 
   const tables = { test_table: TestTable };
@@ -125,9 +125,9 @@ async function CreateTablesWithFixtureDataTest() {
   @Fixture(() => testData)
   class TestTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
-    name!: string;
+    declare name: string;
   }
 
   const tables = { test_table: TestTable };
@@ -141,22 +141,22 @@ async function CreateTablesWithFixtureDataTest() {
 async function HandleMultipleTablesTest() {
   class UserTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    email!: string;
+    declare email: string;
 
-    name!: string;
+    declare name: string;
   }
 
   class ProductTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
     @Index()
-    name!: string;
+    declare name: string;
 
-    price!: number;
+    declare price: number;
   }
 
   const tables = {
@@ -175,9 +175,9 @@ async function HandleMultipleTablesTest() {
 async function IdentifyOldTablesTest() {
   class TestTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
-    name!: string;
+    declare name: string;
   }
 
   const tables = { test_table: TestTable };
@@ -192,9 +192,9 @@ async function IdentifyOldTablesTest() {
 async function ReturnCorrectStatusInformationTest() {
   class TestTable extends Table {
     @Index({ primary: true })
-    id!: string;
+    declare id: string;
 
-    name!: string;
+    declare name: string;
   }
 
   const tables = { test_table: TestTable };
