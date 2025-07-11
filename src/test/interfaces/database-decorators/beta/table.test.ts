@@ -95,11 +95,15 @@ async function CreateTableWithFixtureDataTest() {
 
 async function CombineTableWithMixinsTest() {
   class TestMixin {
-    testMethod() {
-      return 'mixin method';
+    testMethodUnunvailable() {
+      return 'This method should be undefined';
     }
 
-    [MixinSymbol] = class {};
+    [MixinSymbol] = class {
+      testMethod() {
+        return 'mixin method ok';
+      }
+    };
   }
 
   class TestTable extends Table.with(TestMixin) {
@@ -110,7 +114,9 @@ async function CombineTableWithMixinsTest() {
   }
 
   const instance = new TestTable();
-
+  expect(instance).to.have.property('testMethod');
+  expect(instance.testMethod()).to.equal('mixin method ok');
+  expect(instance).to.not.have.property('testMethodUnunvailable');
   expect(instance).to.have.property('id');
   expect(instance).to.have.property('name');
   expect(instance).to.be.instanceOf(TestTable);
