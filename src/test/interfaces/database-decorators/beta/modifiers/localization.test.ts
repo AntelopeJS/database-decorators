@@ -138,68 +138,64 @@ async function HandleLocalizationDecoratorTest() {
   expect(instance.description).to.deep.equal({ fr: 'French Description' });
 }
 
-interface TestTableWithLocalize extends Table {
-  title: Record<string, string>;
-  description: Record<string, string>;
-  localize(locale: string, fields?: Array<keyof TestTableWithLocalize>): TestTableWithLocalize;
-}
-
 async function ProvideLocalizeMethodTest() {
   const TestTableWithMixin = Table.with(LocalizationModifier);
 
   class TestTable extends TestTableWithMixin {
     @Localized({ fallbackLocale: 'en' })
-    title!: Record<string, string>;
+    title!: string;
 
     @Localized({ fallbackLocale: 'en' })
-    description!: Record<string, string>;
+    description!: string;
   }
 
-  const instance = new TestTable() as TestTableWithLocalize;
-  instance.title = { en: 'English Title', fr: 'French Title' };
-  instance.description = { en: 'English Description', fr: 'French Description' };
+  const instance = new TestTable();
+
+  instance.localize('fr').title = 'French Title';
+  instance.localize('fr').description = 'French Description';
+  instance.localize('en').title = 'English Title';
+  instance.localize('en').description = 'English Description';
 
   expect(typeof instance.localize).to.equal('function');
 
   instance.localize('fr');
-
   expect(instance.title).to.equal('French Title');
   expect(instance.description).to.equal('French Description');
 }
-
-interface TestTableWithLocalizeSpecific extends Table {
-  title: Record<string, string>;
-  description: Record<string, string>;
-  content: Record<string, string>;
-  localize(locale: string, fields?: Array<keyof TestTableWithLocalizeSpecific>): TestTableWithLocalizeSpecific;
-}
-
 async function LocalizeSpecificFieldsTest() {
   const TestTableWithMixin = Table.with(LocalizationModifier);
 
   class TestTable extends TestTableWithMixin {
     @Localized({ fallbackLocale: 'en' })
-    title!: Record<string, string>;
+    title!: string;
 
     @Localized({ fallbackLocale: 'en' })
-    description!: Record<string, string>;
+    description!: string;
 
     @Localized({ fallbackLocale: 'en' })
-    content!: Record<string, string>;
+    content!: string;
   }
 
-  const instance = new TestTable() as TestTableWithLocalizeSpecific;
-  instance.title = { en: 'English Title', fr: 'French Title' };
-  instance.description = { en: 'English Description', fr: 'French Description' };
-  instance.content = { en: 'English Content', fr: 'French Content' };
+  const instance = new TestTable();
+
+  instance.localize('en');
+  instance.title = 'English Title';
+  instance.description = 'English Description';
+  instance.content = 'English Content';
+
+  instance.localize('fr');
+  instance.title = 'French Title';
+  instance.description = 'French Description';
+  instance.content = 'French Content';
 
   expect(typeof instance.localize).to.equal('function');
 
+  instance.localize('en');
   instance.localize('fr', ['title', 'content']);
 
   expect(instance.title).to.equal('French Title');
-  expect(instance.description).to.deep.equal({ en: 'English Description', fr: 'French Description' });
   expect(instance.content).to.equal('French Content');
+  expect(instance.description).to.equal('English Description');
 }
 
 interface ComplexLocalizedData {

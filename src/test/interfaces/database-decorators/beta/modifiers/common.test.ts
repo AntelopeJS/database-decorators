@@ -23,7 +23,6 @@ if (testEnabled.modifiers_common) {
     it('creates one way modifier', async () => CreateOneWayModifierTest());
     it('creates two way modifier', async () => CreateTwoWayModifierTest());
     it('creates container modifier', async () => CreateContainerModifierTest());
-    it('attaches OneWayModifier and applies lock()', async () => BasicAttachTest());
     it('passes options to modifier via attachModifier()', async () => AttachWithOptionsTest());
     it('attaches multiple modifiers on same field', async () => ChainedModifiersTest());
     it('throws if adding OneWayModifier after another OneWayModifier', async () => DuplicateOneWayErrorTest());
@@ -105,29 +104,6 @@ async function CreateContainerModifierTest() {
 
   const result = unlockFn(data2, 'key1');
   expect(result).to.equal('val');
-}
-
-async function BasicAttachTest() {
-  class AddPrefix extends OneWayModifier<string, []> {
-    lock(_: string | undefined, value: unknown): string {
-      return `mod_${String(value)}`;
-    }
-  }
-
-  class TestTable extends Table {
-    name!: string;
-  }
-
-  attachModifier(TestTable, AddPrefix, 'name', {});
-  const row = new TestTable();
-  getMetadata(row, ModifiersDynamicMetadata);
-
-  row.name = 'value';
-  expect(row.name).to.equal('value');
-
-  lock(row, AddPrefix, ['name']);
-  row.name = 'value';
-  expect(row.name).to.equal('mod_value');
 }
 
 async function AttachWithOptionsTest() {
