@@ -58,16 +58,18 @@ async function CreateAndQueryUserWithModifiersTest() {
   expect(insertResult.generated_keys).to.have.length(1);
 
   const userId = insertResult.generated_keys![0];
-  const retrievedUser = await userModel.get(userId);
+  const retrievedUserFromModel = await userModel.get(userId);
+  const retrievedUserFromDatabase = await database.table('users').get(userId).run();
 
-  expect(retrievedUser).to.have.property('email', 'test@example.com');
-  expect(retrievedUser).to.have.property('name', 'John Doe');
-  expect(retrievedUser).to.have.property('age', 30);
-  expect(retrievedUser?.password).to.not.equal('securePassword123');
-  expect(retrievedUser?.secretData).to.not.deep.equal({ token: 'secret-token-123' });
+  expect(retrievedUserFromModel).to.have.property('email', 'test@example.com');
+  expect(retrievedUserFromModel).to.have.property('name', 'John Doe');
+  expect(retrievedUserFromModel).to.have.property('age', 30);
+  expect(retrievedUserFromModel?.password).to.not.equal('securePassword123');
+  expect(retrievedUserFromModel?.secretData).to.deep.equal({ token: 'secret-token-123' });
+  expect(retrievedUserFromDatabase?.secretData).to.not.deep.equal({ token: 'secret-token-123' });
 
-  if (retrievedUser?.testHash) {
-    const isPasswordValid = retrievedUser.testHash('password', 'securePassword123');
+  if (retrievedUserFromModel?.testHash) {
+    const isPasswordValid = retrievedUserFromModel.testHash('password', 'securePassword123');
     expect(isPasswordValid).to.equal(true);
   }
 
@@ -217,8 +219,8 @@ async function ManageEncryptedSensitiveDataTest() {
 
   const retrievedData = await sensitiveDataModel.get(dataId);
   expect(retrievedData).to.have.property('userId', 'user123');
-  expect(retrievedData?.creditCard).to.not.equal('4111-1111-1111-1111');
-  expect(retrievedData?.ssn).to.not.equal('123-45-6789');
+  expect(retrievedData?.creditCard).to.equal('4111-1111-1111-1111');
+  expect(retrievedData?.ssn).to.equal('123-45-6789');
 
   const dbData = (await database.table('sensitive_data').get(dataId).run()) as {
     userId: string;
@@ -227,6 +229,7 @@ async function ManageEncryptedSensitiveDataTest() {
   };
   expect(dbData).to.have.property('userId', 'user123');
   expect(dbData?.creditCard).to.not.equal('4111-1111-1111-1111');
+  expect(dbData?.ssn).to.not.equal('123-45-6789');
 }
 
 async function ValidateHashedPasswordsTest() {
