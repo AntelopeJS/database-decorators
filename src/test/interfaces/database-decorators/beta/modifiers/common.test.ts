@@ -4,17 +4,12 @@ import {
   ContainerModifier,
   fromDatabase,
   getModifiedFields,
-  lock,
   Modifier,
-  ModifiersDynamicMetadata,
   OneWayModifier,
-  testValue,
   toDatabase,
   TwoWayModifier,
-  unlock,
 } from '@ajs.local/database-decorators/beta/modifiers/common';
 import { Table } from '@ajs.local/database-decorators/beta/table';
-import { getMetadata } from '@ajs.local/database-decorators/beta/common';
 
 describe('Modifiers - common', () => {
   it('creates basic modifier', async () => CreateBasicModifierTest());
@@ -26,9 +21,6 @@ describe('Modifiers - common', () => {
   it('throws if adding OneWayModifier after another OneWayModifier', async () => DuplicateOneWayErrorTest());
   it('converts database data to table instance', async () => ConvertDatabaseDataToTableTest());
   it('converts table instance to database data', async () => ConvertTableToDatabaseDataTest());
-  it('unlocks modifier fields', async () => UnlockModifierFieldsTest());
-  it('locks modifier fields', async () => LockModifierFieldsTest());
-  it('tests value against modifier', async () => TestValueAgainstModifierTest());
   it('gets modified fields', async () => GetModifiedFieldsTest());
 });
 
@@ -106,32 +98,26 @@ async function AttachWithOptionsTest() {
     suffix: string;
   }
 
-  class AddSuffix extends OneWayModifier<string, [], {}, Opts> {
+  class SuffixModifier extends OneWayModifier<string, [], {}, Opts> {
+    public readonly autolock = true;
     lock(_: string | undefined, value: unknown): string {
       return `${String(value)}${this.options.suffix}`;
     }
   }
-
   class TestTable extends Table {
-    name!: string;
+    declare name: string;
   }
 
-  attachModifier(TestTable, AddSuffix, 'name', { suffix: '!' });
+  attachModifier(TestTable, SuffixModifier, 'name', { suffix: '_suffix' });
   const row = new TestTable();
-  getMetadata(row, ModifiersDynamicMetadata);
-
   row.name = 'hello';
-  expect(row.name).to.equal('hello');
-
-  lock(row, AddSuffix, ['name']);
-  row.name = 'hello';
-  expect(row.name).to.equal('hello!');
+  expect(row.name).to.equal('hello_suffix');
 }
 
 async function ChainedModifiersTest() {
-  class Prefix extends OneWayModifier<string, []> {
+  class Prefix extends OneWayModifier<string, [], {}, { prefix: string }> {
     lock(_: string | undefined, value: unknown): string {
-      return `pre_${String(value)}`;
+      return `${this.options.prefix}${String(value)}`;
     }
   }
 
@@ -149,17 +135,16 @@ async function ChainedModifiersTest() {
     name!: string;
   }
 
-  attachModifier(TestTable, Prefix, 'name', {});
-  attachModifier(TestTable, Suffix, 'name', { suffix: '!' });
-
-  const row = new TestTable();
-  getMetadata(row, ModifiersDynamicMetadata);
-
-  lock(row, Prefix, ['name']);
-  unlock(row, Suffix, ['name']);
-
-  row.name = 'value';
-  expect(row.name).to.equal('pre_value!');
+  let error = 'no error';
+  attachModifier(TestTable, Prefix, 'name', { prefix: 'pre_' });
+  try {
+    attachModifier(TestTable, Suffix, 'name', { suffix: '_suffix' });
+  } catch (e: any) {
+    error = String(e.message);
+  }
+  expect(error).to.equal(
+    'Adding Modifier Suffix on TestTable.name after a One-Way Modifier, please review your ordering.',
+  );
 }
 
 async function DuplicateOneWayErrorTest() {
@@ -212,79 +197,6 @@ async function ConvertTableToDatabaseDataTest() {
   const db = toDatabase(instance);
   expect(db.name).to.equal('Eva');
   expect(db.age).to.equal(22);
-}
-
-async function UnlockModifierFieldsTest() {
-  class TestMod extends TwoWayModifier<string, [string]> {
-    lock(_: string | undefined, v: unknown, p: string): string {
-      return `${p}_${String(v)}`;
-    }
-    unlock(v: string, p: string): unknown {
-      return v.replace(`${p}_`, '');
-    }
-  }
-
-  class TestTable extends Table {
-    name!: string;
-  }
-
-  attachModifier(TestTable, TestMod, 'name', {});
-  const row = new TestTable();
-
-  lock(row, TestMod, ['name'], 'test');
-  row.name = 'value';
-  expect(row.name).to.equal('test_value');
-
-  unlock(row, TestMod, ['name'], 'test');
-  expect(row.name).to.equal('value');
-}
-
-async function LockModifierFieldsTest() {
-  class TestMod extends OneWayModifier<string, [string]> {
-    lock(_: string | undefined, v: unknown, p: string): string {
-      return `${p}_${String(v)}`;
-    }
-  }
-
-  class TestTable extends Table {
-    name!: string;
-  }
-
-  attachModifier(TestTable, TestMod, 'name', {});
-  const row = new TestTable();
-
-  row.name = 'init';
-  expect(row.name).to.equal('init');
-
-  lock(row, TestMod, ['name'], 'mod');
-  row.name = 'new_value';
-  expect(row.name).to.equal('mod_new_value');
-}
-
-async function TestValueAgainstModifierTest() {
-  class TestMod extends OneWayModifier<string, [string]> {
-    lock(_: string | undefined, v: unknown, p: string): string {
-      return `${p}_${String(v)}`;
-    }
-    test(l: string, v: unknown, p: string): boolean {
-      return this.lock(undefined, v, p) === l;
-    }
-  }
-
-  class TestTable extends Table {
-    name!: string;
-  }
-
-  attachModifier(TestTable, TestMod, 'name', {});
-  const row = new TestTable();
-  lock(row, TestMod, ['name'], 't');
-
-  row.name = 'foo';
-  expect(row.name).to.equal('t_foo');
-
-  expect(testValue(row, 'name', 't_foo')).to.equal(true);
-  expect(testValue(row, 'name', 'foo')).to.equal(false);
-  expect(testValue(row, 'name', 't_bar')).to.equal(false);
 }
 
 async function GetModifiedFieldsTest() {
