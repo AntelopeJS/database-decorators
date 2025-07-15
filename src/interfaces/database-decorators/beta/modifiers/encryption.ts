@@ -14,37 +14,24 @@ type Options = {
 type Meta = {};
 type LockedType = [ciphertext: string, iv: string, authTag?: string];
 
-function encodeDate(value: unknown): unknown {
-  if (value instanceof Date) {
-    return { value: value.toUTCString(), type: 'Date' };
-  }
-  if (Array.isArray(value)) {
-    return value.map(encodeDate);
-  }
-  if (value !== null && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, encodeDate(val)]));
-  }
-  return value;
+function date_encoder(this: any, key: string) {
+  return this[key] instanceof Date
+    ? {
+        value: this[key].toUTCString(),
+        type: 'Date',
+      }
+    : this[key];
 }
 
-function decodeDate(value: unknown): unknown {
-  if (
-    value &&
+function date_decoder(key: string, value: any) {
+  return value !== null &&
     typeof value === 'object' &&
-    'type' in value &&
-    value.type === 'Date' &&
-    'value' in value &&
-    typeof value.value === 'string'
-  ) {
-    return new Date(value.value);
-  }
-  if (Array.isArray(value)) {
-    return value.map(decodeDate);
-  }
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, decodeDate(v)]));
-  }
-  return value;
+    Object.keys(value).length === 2 &&
+    Object.keys(value).includes('type') &&
+    Object.keys(value).includes('value') &&
+    value.type === 'Date'
+    ? new Date(value.value)
+    : value;
 }
 
 /**
@@ -57,9 +44,10 @@ export class EncryptionModifier extends TwoWayModifier<LockedType, [], Meta, Opt
 
   public override lock(_locked_value: LockedType | undefined, value: unknown): LockedType {
     const iv = randomBytes(this.options.ivSize || 16);
-    const encoded = encodeDate(value);
     const cipher = createCipheriv(this.options.algorithm || 'aes-256-gcm', this.options.secretKey, iv);
-    const encrypted = Buffer.concat([cipher.update(JSON.stringify(encoded)), cipher.final()]).toString('base64');
+    const encrypted = Buffer.concat([cipher.update(JSON.stringify(value, date_encoder)), cipher.final()]).toString(
+      'base64',
+    );
 
     let authTag: string | undefined;
     try {
@@ -84,10 +72,10 @@ export class EncryptionModifier extends TwoWayModifier<LockedType, [], Meta, Opt
       (<DecipherCCM>decipher).setAuthTag(Buffer.from(authTag, 'base64'));
     }
 
-    const parsed = JSON.parse(
+    return JSON.parse(
       Buffer.concat([decipher.update(Buffer.from(locked_value, 'base64')), decipher.final()]).toString('utf8'),
+      date_decoder,
     ) as unknown;
-    return decodeDate(parsed);
   }
 
   public override unlockrequest(data: DatabaseDev.ValueProxy.Proxy<LockedType>): DatabaseDev.ValueProxy.Proxy<unknown> {
