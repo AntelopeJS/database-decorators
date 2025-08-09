@@ -17,6 +17,7 @@ describe('Schema - database schemas', () => {
   it('initializes database from default schema', async () => InitializeDatabaseFromDefaultSchemaTest());
   it('initializes database from custom schema', async () => InitializeDatabaseFromCustomSchemaTest());
   it('handles empty schema', async () => HandleEmptySchemaTest());
+  it('create database with undefined schema', async () => HandleSchemaWithNoTablesTest());
 });
 
 async function RegisterTableInDefaultSchemaTest() {
@@ -161,7 +162,21 @@ async function HandleEmptySchemaTest() {
     expect(initInfo).to.have.property('tablesStatus').that.deep.equals({});
     expect(initInfo).to.have.property('oldTables').that.is.an('array');
   } catch (error) {
-    // Si le schéma n'existe pas, c'est normal
     expect(error).to.be.instanceOf(Error);
   }
+}
+
+async function HandleSchemaWithNoTablesTest() {
+  const databaseName = 'test-no-tables-schema-db';
+  const schemaName = 'no_tables_schema';
+
+  const initInfo = await InitializeDatabaseFromSchema(databaseName, schemaName);
+
+  expect(initInfo).to.have.property('databaseStatus');
+  expect(initInfo).to.have.property('tablesStatus').that.deep.equals({});
+  expect(initInfo).to.have.property('oldTables').that.is.an('array');
+
+  expect(initInfo.databaseStatus).to.equal('created');
+  expect(initInfo.tablesStatus).to.deep.equal({});
+  expect(initInfo.oldTables).to.deep.equal([]);
 }
