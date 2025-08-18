@@ -19,5 +19,6 @@ export const GetTablesFromSchema = (schemaName: string) => {
 };
 
 export function InitializeDatabaseFromSchema(databaseName: string, schemaName?: string) {
-  return InitializeDatabase(databaseName, GetTablesFromSchema(schemaName || String(DEFAULT_SCHEMA)));
+  const tables = GetTablesFromSchema(schemaName || String(DEFAULT_SCHEMA));
+  return InitializeDatabase(databaseName, tables || {});
 }
