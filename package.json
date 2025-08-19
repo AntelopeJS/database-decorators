@@ -46,7 +46,7 @@
       "url": "mongodb://localhost:27017"
     },
     "test": {
-      "project": "testproject.js",
+      "project": "src/test/antelope.test.js",
       "folder": "dist/test"
     }
   },
