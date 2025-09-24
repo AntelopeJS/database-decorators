@@ -159,14 +159,17 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
   };
 }
 
-const modelCache: Record<string, InstanceType<DataModel>> = {};
+const modelCache = new Map<Class, Record<string, InstanceType<DataModel>>>();
 
 export function GetModel<M extends InstanceType<DataModel>>(cl: Class<M>, databaseName: string) {
-  const cacheKey = `${databaseName}:${cl.name}`;
-  if (modelCache[cacheKey]) return modelCache[cacheKey] as M;
+  if (!modelCache.has(cl)) {
+    modelCache.set(cl, {});
+  }
+  const cache = modelCache.get(cl)!;
+  if (cache[databaseName]) return cache[databaseName] as M;
   const database = Database(databaseName);
   const model = new cl(database);
-  modelCache[cacheKey] = model;
+  cache[databaseName] = model;
   return model;
 }
 
