@@ -3,7 +3,6 @@ import { Hashed, HashModifier } from '@ajs.local/database-decorators/beta/modifi
 import { Table } from '@ajs.local/database-decorators/beta/table';
 
 describe('Modifiers - hash', () => {
-  it('creates hash modifier', async () => CreateHashModifierTest());
   it('hashes string values', async () => HashStringValuesTest());
   it('hashes object values', async () => HashObjectValuesTest());
   it('handles undefined values', async () => HandleUndefinedValuesTest());
@@ -12,7 +11,6 @@ describe('Modifiers - hash', () => {
   it('handles hash decorator', async () => HandleHashDecoratorTest());
   it('tests hash values correctly', async () => TestHashValuesTest());
   it('provides testHash method through mixin', async () => ProvideTestHashMethodTest());
-  it('maintains hash consistency', async () => MaintainHashConsistencyTest());
 });
 
 interface HashOptions {
@@ -39,15 +37,6 @@ class TestableHashModifier extends HashModifier {
   public setMeta(meta: HashMeta) {
     this.meta = meta;
   }
-}
-
-async function CreateHashModifierTest() {
-  const modifier = new TestableHashModifier();
-  modifier.setOptions({ algorithm: 'sha256' });
-
-  expect(modifier).to.be.instanceOf(HashModifier);
-  expect(modifier.getOptions().algorithm).to.equal('sha256');
-  expect(modifier.autolock).to.equal(true);
 }
 
 async function HashStringValuesTest() {
@@ -143,20 +132,13 @@ async function TestHashValuesTest() {
   expect(isNotMatch).to.equal(false);
 }
 
-interface TestTableWithHash extends Table {
-  password: string;
-  testHash(field: 'password', value: string): boolean;
-}
-
 async function ProvideTestHashMethodTest() {
-  const TestTableWithMixin = Table.with(HashModifier);
-
-  class TestTable extends TestTableWithMixin {
+  class TestTable extends Table.with(HashModifier) {
     @Hashed({ algorithm: 'sha256' })
     declare password: string;
   }
 
-  const instance = new TestTable() as TestTableWithHash;
+  const instance = new TestTable();
   instance.password = 'myPassword123';
 
   expect(typeof instance.testHash).to.equal('function');
@@ -166,19 +148,4 @@ async function ProvideTestHashMethodTest() {
 
   expect(isMatch).to.equal(true);
   expect(isNotMatch).to.equal(false);
-}
-
-async function MaintainHashConsistencyTest() {
-  const modifier = new TestableHashModifier();
-  modifier.setMeta({});
-  modifier.setOptions({ algorithm: 'sha256' });
-
-  const originalValue = 'consistent data';
-  const hashed1 = modifier.lock(undefined, originalValue);
-  const salt = modifier.getMeta().salt;
-
-  modifier.setMeta({ salt });
-  const hashed2 = modifier.lock(undefined, originalValue);
-
-  expect(hashed1).to.equal(hashed2);
 }

@@ -80,16 +80,14 @@ async function CreateContainerModifierTest() {
   }
 
   const mod = new TestContainer();
-  const lockFn = mod.getLock();
-  const unlockFn = mod.getUnlock();
 
-  const data1 = lockFn(undefined, 'val', 'key1');
+  const data1 = mod.lock(undefined, 'val', 'key1');
   expect(data1).to.deep.equal({ key1: 'val' });
 
-  const data2 = lockFn(data1, 'val2', 'key2');
+  const data2 = mod.lock(data1, 'val2', 'key2');
   expect(data2).to.deep.equal({ key1: 'val', key2: 'val2' });
 
-  const result = unlockFn(data2, 'key1');
+  const result = mod.unlock(data2, 'key1');
   expect(result).to.equal('val');
 }
 
@@ -137,14 +135,9 @@ async function ChainedModifiersTest() {
 
   let error = 'no error';
   attachModifier(TestTable, Prefix, 'name', { prefix: 'pre_' });
-  try {
+  expect(() => {
     attachModifier(TestTable, Suffix, 'name', { suffix: '_suffix' });
-  } catch (e: any) {
-    error = String(e.message);
-  }
-  expect(error).to.equal(
-    'Adding Modifier Suffix on TestTable.name after a One-Way Modifier, please review your ordering.',
-  );
+  }).to.throw(/please review your ordering/);
 }
 
 async function DuplicateOneWayErrorTest() {

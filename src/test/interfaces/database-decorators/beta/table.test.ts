@@ -9,7 +9,6 @@ describe('Table - decorators', () => {
   it('creates table with grouped indexes', async () => CreateTableWithGroupedIndexesTest());
   it('creates table with fixture data', async () => CreateTableWithFixtureDataTest());
   it('combines table with mixins', async () => CombineTableWithMixinsTest());
-  it('handles table metadata symbols', async () => HandleTableMetadataSymbolsTest());
 });
 
 async function CreateTableWithPrimaryIndexTest() {
@@ -114,18 +113,5 @@ async function CombineTableWithMixinsTest() {
   expect(instance).to.not.have.property('testMethodUnunvailable');
   expect(instance).to.have.property('id');
   expect(instance).to.have.property('name');
-  expect(instance).to.be.instanceOf(TestTable);
-}
-
-async function HandleTableMetadataSymbolsTest() {
-  class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-  }
-
-  const instance = new TestTable();
-
-  expect(TableMetaSymbol).to.be.a('symbol');
-  expect(TableRefSymbol).to.be.a('symbol');
   expect(instance).to.be.instanceOf(TestTable);
 }

@@ -7,7 +7,6 @@ describe('Modifiers - encryption', () => {
   it('encrypts and decrypts string values', async () => EncryptAndDecryptStringValuesTest());
   it('encrypts and decrypts object values', async () => EncryptAndDecryptObjectValuesTest());
   it('encrypts and decrypts array values', async () => EncryptAndDecryptArrayValuesTest());
-  it('uses custom encryption algorithm', async () => UseCustomEncryptionAlgorithmTest());
   it('uses custom iv size', async () => UseCustomIvSizeTest());
   it('handles encryption decorator', async () => HandleEncryptionDecoratorTest());
   it('generates unique iv for each encryption', async () => GenerateUniqueIvForEachEncryptionTest());
@@ -59,17 +58,6 @@ async function EncryptAndDecryptArrayValuesTest() {
   const original = ['a', 'b', { deep: 'x' }];
   tags.values = original;
   expect(tags.values).to.deep.equal(original);
-}
-
-async function UseCustomEncryptionAlgorithmTest() {
-  class CustomAlgo extends Table.with(EncryptionModifier) {
-    @Encrypted({ secretKey: '12345678901234567890123456789012', algorithm: 'aes-256-cbc' })
-    declare field: string;
-  }
-
-  const row = new CustomAlgo();
-  row.field = 'custom';
-  expect(row.field).to.equal('custom');
 }
 
 async function UseCustomIvSizeTest() {

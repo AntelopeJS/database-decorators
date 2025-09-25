@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { BasicDataModel, GetModel, StaticModel, DynamicModel } from '@ajs.local/database-decorators/beta/model';
 import { Table, Index } from '@ajs.local/database-decorators/beta/table';
-import { RequestContext } from '@ajs/api/beta';
+import { Controller, Get, RequestContext } from '@ajs/api/beta';
+import { assert } from 'console';
 
 describe('Model - data operations', () => {
   it('creates basic data model', async () => CreateBasicDataModelTest());
@@ -142,13 +143,19 @@ async function HandleStaticModelDecoratorTest() {
     name!: string;
   }
   const TestModel = BasicDataModel(TestTable, 'test_table');
-  class TestService {
+  class _TestService extends Controller('/staticmodel') {
     @StaticModel(TestModel, 'test-db')
     model!: InstanceType<typeof TestModel>;
+
+    @Get('/')
+    callback() {
+      expect('model' in this).to.equal(true);
+      expect(this.model).to.be.instanceOf(TestModel);
+    }
   }
-  const service = new TestService();
-  // L'injection peut ne pas être active, donc on vérifie simplement la propriété
-  expect('model' in service).to.equal(true);
+
+	const res = await fetch("http://localhost:5010/staticmodel");
+  expect(res.status, res.statusText).to.equal(200);
 }
 
 async function HandleDynamicModelDecoratorTest() {
@@ -158,10 +165,17 @@ async function HandleDynamicModelDecoratorTest() {
     name!: string;
   }
   const TestModel = BasicDataModel(TestTable, 'test_table');
-  class TestService {
+  class _TestService extends Controller('/dynamicmodel/:database') {
     @DynamicModel(TestModel, (ctx: RequestContext) => ctx.routeParameters.database)
     model!: InstanceType<typeof TestModel>;
+
+    @Get('/')
+    callback() {
+      expect('model' in this).to.equal(true);
+      expect(this.model).to.be.instanceOf(TestModel);
+    }
   }
-  const service = new TestService();
-  expect('model' in service).to.equal(true);
+
+	const res = await fetch("http://localhost:5010/dynamicmodel/test-db");
+  expect(res.status, res.statusText).to.equal(200);
 }

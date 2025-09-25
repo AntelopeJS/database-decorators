@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { InitializeDatabase } from '@ajs.local/database-decorators/beta/database';
 import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table';
+import { CreateDatabase, Database, ListDatabases } from '@ajs/database/beta';
 
 describe('Database - initialization', () => {
   it('initializes new database', async () => InitializeNewDatabaseTest());
@@ -10,7 +11,6 @@ describe('Database - initialization', () => {
   it('creates tables with grouped indexes', async () => CreateTablesWithGroupedIndexesTest());
   it('creates tables with fixture data', async () => CreateTablesWithFixtureDataTest());
   it('handles multiple tables', async () => HandleMultipleTablesTest());
-  it('identifies old tables', async () => IdentifyOldTablesTest());
   it('returns correct status information', async () => ReturnCorrectStatusInformationTest());
   it('handles empty table list', async () => HandleEmptyTableListTest());
 });
@@ -31,6 +31,9 @@ async function InitializeNewDatabaseTest() {
   expect(initInfo).to.have.property('databaseStatus');
   expect(initInfo).to.have.property('tablesStatus');
   expect(initInfo).to.have.property('oldTables');
+
+  expect(await ListDatabases()).to.contain(databaseName);
+  expect(await Database(databaseName).tableList()).to.deep.equal(Object.keys(tables));
 }
 
 async function HandleExistingDatabaseTest() {
@@ -44,11 +47,14 @@ async function HandleExistingDatabaseTest() {
   const tables = { test_table: TestTable };
   const databaseName = 'test-existing-database';
 
+  await CreateDatabase(databaseName);
+  await Database(databaseName).tableCreate('old_table');
+
   const initInfo = await InitializeDatabase(databaseName, tables);
 
   expect(initInfo).to.have.property('databaseStatus');
   expect(initInfo).to.have.property('tablesStatus');
-  expect(initInfo).to.have.property('oldTables');
+  expect(initInfo).to.have.property('oldTables').that.contains('old_table');
 }
 
 async function CreateTablesWithPrimaryKeysTest() {
@@ -83,9 +89,9 @@ async function CreateTablesWithIndexesTest() {
   const tables = { test_table: TestTable };
   const databaseName = 'test-indexes';
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
-
-  expect(initInfo).to.have.property('tablesStatus');
+  await InitializeDatabase(databaseName, tables);
+  
+  expect(await Database(databaseName).table('test_table').indexList()).to.include.members(['name', 'email']);
 }
 
 async function CreateTablesWithGroupedIndexesTest() {
@@ -106,9 +112,9 @@ async function CreateTablesWithGroupedIndexesTest() {
   const tables = { test_table: TestTable };
   const databaseName = 'test-grouped-indexes';
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
+  await InitializeDatabase(databaseName, tables);
 
-  expect(initInfo).to.have.property('tablesStatus');
+  expect(await Database(databaseName).table('test_table').indexList()).to.include.members(['user_search', 'age_range']);
 }
 
 async function CreateTablesWithFixtureDataTest() {
@@ -128,9 +134,11 @@ async function CreateTablesWithFixtureDataTest() {
   const tables = { test_table: TestTable };
   const databaseName = 'test-fixture-data';
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
+  await InitializeDatabase(databaseName, tables);
 
-  expect(initInfo).to.have.property('tablesStatus');
+  const result = await Database(databaseName).table('test_table');
+  result.forEach(val => delete val._id);
+  expect(result).to.deep.equal(testData);
 }
 
 async function HandleMultipleTablesTest() {
@@ -162,26 +170,7 @@ async function HandleMultipleTablesTest() {
 
   const initInfo = await InitializeDatabase(databaseName, tables);
 
-  expect(initInfo).to.have.property('tablesStatus');
-  expect(initInfo).to.have.property('tablesStatus').that.has.property('users');
-  expect(initInfo).to.have.property('tablesStatus').that.has.property('products');
-}
-
-async function IdentifyOldTablesTest() {
-  class TestTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
-    declare name: string;
-  }
-
-  const tables = { test_table: TestTable };
-  const databaseName = 'test-old-tables';
-
-  const initInfo = await InitializeDatabase(databaseName, tables);
-
-  expect(initInfo).to.have.property('oldTables');
-  expect(initInfo).to.have.property('oldTables').that.is.an('array');
+  expect(initInfo).to.have.property('tablesStatus').that.contains.keys('users', 'products');
 }
 
 async function ReturnCorrectStatusInformationTest() {

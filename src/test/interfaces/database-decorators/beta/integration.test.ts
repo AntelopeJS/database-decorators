@@ -61,9 +61,9 @@ async function CreateAndQueryUserWithModifiersTest() {
   const retrievedUserFromModel = await userModel.get(userId);
   const retrievedUserFromDatabase = await database.table('users').get(userId).run();
 
-  expect(retrievedUserFromModel).to.have.property('email', 'test@example.com');
-  expect(retrievedUserFromModel).to.have.property('name', 'John Doe');
-  expect(retrievedUserFromModel).to.have.property('age', 30);
+  expect(retrievedUserFromModel).to.have.property('email').that.equals('test@example.com');
+  expect(retrievedUserFromModel).to.have.property('name').that.equals('John Doe');
+  expect(retrievedUserFromModel).to.have.property('age').that.equals(30);
   expect(retrievedUserFromModel?.password).to.not.equal('securePassword123');
   expect(retrievedUserFromModel?.secretData).to.deep.equal({ token: 'secret-token-123' });
   expect(retrievedUserFromDatabase?.secretData).to.not.deep.equal({ token: 'secret-token-123' });
@@ -79,8 +79,8 @@ async function CreateAndQueryUserWithModifiersTest() {
     password: string;
     secretData: string;
   };
-  expect(dbUser).to.have.property('email', 'test@example.com');
-  expect(dbUser).to.have.property('name', 'John Doe');
+  expect(dbUser).to.have.property('email').that.equals('test@example.com');
+  expect(dbUser).to.have.property('name').that.equals('John Doe');
 }
 
 async function PerformCrudOperationsOnProductsTest() {
@@ -118,15 +118,15 @@ async function PerformCrudOperationsOnProductsTest() {
   const productId = insertResult.generated_keys![0];
 
   const retrievedProduct = await productModel.get(productId);
-  expect(retrievedProduct).to.have.property('name', 'Test Product');
-  expect(retrievedProduct).to.have.property('price', 99.99);
+  expect(retrievedProduct).to.have.property('name').that.equals('Test Product');
+  expect(retrievedProduct).to.have.property('price').that.equals(99.99);
 
   const updateData = { price: 89.99, stockQuantity: 45 };
   await productModel.update(productId, updateData);
 
   const updatedProduct = await productModel.get(productId);
-  expect(updatedProduct).to.have.property('price', 89.99);
-  expect(updatedProduct).to.have.property('stockQuantity', 45);
+  expect(updatedProduct).to.have.property('price').that.equals(89.99);
+  expect(updatedProduct).to.have.property('stockQuantity').that.equals(45);
 
   await productModel.delete(productId);
 
@@ -170,7 +170,7 @@ async function HandleLocalizedContentTest() {
   const retrievedContent = await contentModel.get(contentId);
   expect(retrievedContent).to.have.property('title');
   expect(retrievedContent).to.have.property('description');
-  expect(retrievedContent).to.have.property('category', 'News');
+  expect(retrievedContent).to.have.property('category').that.equals('News');
 
   if (retrievedContent?.localize) {
     const frenchContent = retrievedContent.localize('fr');
@@ -218,7 +218,7 @@ async function ManageEncryptedSensitiveDataTest() {
   const dataId = insertResult.generated_keys![0];
 
   const retrievedData = await sensitiveDataModel.get(dataId);
-  expect(retrievedData).to.have.property('userId', 'user123');
+  expect(retrievedData).to.have.property('userId').that.equals('user123');
   expect(retrievedData?.creditCard).to.equal('4111-1111-1111-1111');
   expect(retrievedData?.ssn).to.equal('123-45-6789');
 
@@ -227,7 +227,7 @@ async function ManageEncryptedSensitiveDataTest() {
     creditCard: string;
     ssn: string;
   };
-  expect(dbData).to.have.property('userId', 'user123');
+  expect(dbData).to.have.property('userId').that.equals('user123');
   expect(dbData?.creditCard).to.not.equal('4111-1111-1111-1111');
   expect(dbData?.ssn).to.not.equal('123-45-6789');
 }
@@ -263,7 +263,7 @@ async function ValidateHashedPasswordsTest() {
   const accountId = insertResult.generated_keys![0];
 
   const retrievedAccount = await userAccountModel.get(accountId);
-  expect(retrievedAccount).to.have.property('username', 'testuser');
+  expect(retrievedAccount).to.have.property('username').that.equals('testuser');
   expect(retrievedAccount?.password).to.not.equal('mySecurePassword123');
 
   if (retrievedAccount?.testHash) {
@@ -322,8 +322,8 @@ async function WorkWithSchemaRegistrationTest() {
   const retrievedUser = await userModel.get(userResult.generated_keys![0]);
   const retrievedProduct = await productModel.get(productResult.generated_keys![0]);
 
-  expect(retrievedUser).to.have.property('email', 'user@example.com');
-  expect(retrievedProduct).to.have.property('name', 'Test Product');
+  expect(retrievedUser).to.have.property('email').that.equals('user@example.com');
+  expect(retrievedProduct).to.have.property('name').that.equals('Test Product');
 }
 
 async function HandleComplexRelationshipsTest() {
@@ -385,8 +385,8 @@ async function HandleComplexRelationshipsTest() {
   expect(Object.keys(orderItemsResult.generated_keys || {})).to.have.length(2);
 
   const retrievedOrder = await orderModel.get(orderId);
-  expect(retrievedOrder).to.have.property('customerId', 'customer123');
-  expect(retrievedOrder).to.have.property('totalAmount', 299.97);
+  expect(retrievedOrder).to.have.property('customerId').that.equals('customer123');
+  expect(retrievedOrder).to.have.property('totalAmount').that.equals(299.97);
 
   const orderItems = await orderItemModel.getBy('orderId', orderId);
   expect(orderItems).to.be.an('array');
