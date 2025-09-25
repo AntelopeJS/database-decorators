@@ -133,7 +133,6 @@ async function ChainedModifiersTest() {
     name!: string;
   }
 
-  let error = 'no error';
   attachModifier(TestTable, Prefix, 'name', { prefix: 'pre_' });
   expect(() => {
     attachModifier(TestTable, Suffix, 'name', { suffix: '_suffix' });

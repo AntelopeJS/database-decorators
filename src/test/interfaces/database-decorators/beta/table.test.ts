@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Table, Index, Fixture, TableMetaSymbol, TableRefSymbol } from '@ajs.local/database-decorators/beta/table';
+import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table';
 import { DatumStaticMetadata, getMetadata } from '@ajs.local/database-decorators/beta/common';
 import { MixinSymbol } from '@ajs.local/database-decorators/beta/modifiers/common';
 

@@ -90,7 +90,7 @@ async function CreateTablesWithIndexesTest() {
   const databaseName = 'test-indexes';
 
   await InitializeDatabase(databaseName, tables);
-  
+
   expect(await Database(databaseName).table('test_table').indexList()).to.include.members(['name', 'email']);
 }
 
@@ -137,7 +137,7 @@ async function CreateTablesWithFixtureDataTest() {
   await InitializeDatabase(databaseName, tables);
 
   const result = await Database(databaseName).table('test_table');
-  result.forEach(val => delete val._id);
+  result.forEach((val) => delete val._id);
   expect(result).to.deep.equal(testData);
 }
 

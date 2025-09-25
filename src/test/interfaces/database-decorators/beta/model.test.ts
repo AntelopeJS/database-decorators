@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { BasicDataModel, GetModel, StaticModel, DynamicModel } from '@ajs.local/database-decorators/beta/model';
 import { Table, Index } from '@ajs.local/database-decorators/beta/table';
 import { Controller, Get, RequestContext } from '@ajs/api/beta';
-import { assert } from 'console';
 
 describe('Model - data operations', () => {
   it('creates basic data model', async () => CreateBasicDataModelTest());
@@ -154,7 +153,7 @@ async function HandleStaticModelDecoratorTest() {
     }
   }
 
-	const res = await fetch("http://localhost:5010/staticmodel");
+  const res = await fetch('http://localhost:5010/staticmodel');
   expect(res.status, res.statusText).to.equal(200);
 }
 
@@ -176,6 +175,6 @@ async function HandleDynamicModelDecoratorTest() {
     }
   }
 
-	const res = await fetch("http://localhost:5010/dynamicmodel/test-db");
+  const res = await fetch('http://localhost:5010/dynamicmodel/test-db');
   expect(res.status, res.statusText).to.equal(200);
 }
