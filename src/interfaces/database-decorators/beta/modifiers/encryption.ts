@@ -11,44 +11,74 @@ type Options = {
   /** Initialization Vector size. */
   ivSize?: number;
 };
-type Meta = { iv: string; authTag?: string };
+type Meta = {};
+type LockedType = [ciphertext: string, iv: string, authTag?: string];
+
+function date_encoder(this: any, key: string) {
+  return this[key] instanceof Date
+    ? {
+        value: this[key].toUTCString(),
+        type: 'Date',
+      }
+    : this[key];
+}
+
+function date_decoder(key: string, value: any) {
+  return value !== null &&
+    typeof value === 'object' &&
+    Object.keys(value).length === 2 &&
+    Object.keys(value).includes('type') &&
+    Object.keys(value).includes('value') &&
+    value.type === 'Date'
+    ? new Date(value.value)
+    : value;
+}
 
 /**
  * Encryption modifier. enables the use of {@link Encrypted} on table fields.
  *
  * These fields are stored encrypted in the database.
  */
-export class EncryptionModifier extends TwoWayModifier<string, [], Meta, Options> {
-  public override lock(locked_value: string | undefined, value: unknown) {
+export class EncryptionModifier extends TwoWayModifier<LockedType, [], Meta, Options> {
+  readonly autolock = true;
+
+  public override lock(_locked_value: LockedType | undefined, value: unknown): LockedType {
     const iv = randomBytes(this.options.ivSize || 16);
     const cipher = createCipheriv(this.options.algorithm || 'aes-256-gcm', this.options.secretKey, iv);
-    const authTag: string | undefined =
-      'getAuthTag' in cipher ? (<CipherCCM>cipher).getAuthTag().toString('base64') : undefined;
-    const encrypted = Buffer.concat([cipher.update(JSON.stringify(value)), cipher.final()]).toString('base64');
+    const encrypted = Buffer.concat([cipher.update(JSON.stringify(value, date_encoder)), cipher.final()]).toString(
+      'base64',
+    );
 
-    this.meta.iv = iv.toString('base64');
-    this.meta.authTag = authTag;
+    let authTag: string | undefined;
+    try {
+      authTag = 'getAuthTag' in cipher ? (<CipherCCM>cipher).getAuthTag().toString('base64') : undefined;
+    } catch {
+      // Ignore error if getAuthTag is not available
+    }
 
-    return encrypted;
+    return [encrypted, iv.toString('base64'), authTag];
   }
 
-  public override unlock(locked_value: string) {
+  readonly autounlock = true;
+
+  public override unlock([locked_value, iv_str, authTag]: LockedType) {
     const decipher = createDecipheriv(
       this.options.algorithm || 'aes-256-gcm',
       this.options.secretKey,
-      Buffer.from(this.meta.iv, 'base64'),
+      Buffer.from(iv_str, 'base64'),
     );
 
-    if ('setAuthTag' in decipher && this.meta.authTag) {
-      (<DecipherCCM>decipher).setAuthTag(Buffer.from(this.meta.authTag, 'base64'));
+    if ('setAuthTag' in decipher && authTag) {
+      (<DecipherCCM>decipher).setAuthTag(Buffer.from(authTag, 'base64'));
     }
 
     return JSON.parse(
       Buffer.concat([decipher.update(Buffer.from(locked_value, 'base64')), decipher.final()]).toString('utf8'),
-    );
+      date_decoder,
+    ) as unknown;
   }
 
-  public override unlockrequest(data: DatabaseDev.ValueProxy.Proxy<string>): DatabaseDev.ValueProxy.Proxy<unknown> {
+  public override unlockrequest(data: DatabaseDev.ValueProxy.Proxy<LockedType>): DatabaseDev.ValueProxy.Proxy<unknown> {
     return data;
   }
 

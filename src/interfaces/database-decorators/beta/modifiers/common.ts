@@ -118,9 +118,16 @@ export class ModifiersDynamicMetadata {
 
   canGet(field: string) {
     const list = this.staticMeta[field];
+    const lastModifier = list[list.length - 1].modifier;
+    if ((<any>lastModifier).autolock) {
+      return true;
+    }
+
     return (
-      !isWriteOnly(list[list.length - 1].modifier) &&
-      !list.some(({ id, modifier }) => 'unlock' in modifier && !(id in this.fields[field]))
+      !isWriteOnly(lastModifier) &&
+      !list.some(
+        ({ id, modifier }) => !(<any>modifier).autounlock && 'unlock' in modifier && !(id in this.fields[field]),
+      )
     );
   }
 
@@ -135,9 +142,15 @@ export class ModifiersDynamicMetadata {
     let value = internal.data[field];
     for (const { id, modifier, metaRef } of list) {
       if ('unlock' in modifier && value !== undefined) {
-        value = withRef(internal, id, modifier, metaRef, (modifier: TwoWayModifier<unknown, any[]>) =>
-          modifier.unlock(value, ...this.fields[field][id]),
-        );
+        if (this.fields[field][id]) {
+          value = withRef(internal, id, modifier, metaRef, (modifier: TwoWayModifier<unknown, any[]>) =>
+            modifier.unlock(value, ...this.fields[field][id]),
+          );
+        } else if ((<any>modifier).autounlock) {
+          value = withRef(internal, id, modifier, metaRef, (modifier: TwoWayModifier<unknown, any[]>) =>
+            modifier.unlock(value),
+          );
+        }
       }
     }
     return value;
@@ -276,15 +289,14 @@ export function attachModifier<T extends Constructible, M extends Constructible<
           )} but it already has a One-Way Modifier`,
         );
       } else {
-        console.error(
+        throw new Error(
           `Adding Modifier ${entry.id} on ${TableClass.name}.${<string>(
             field
           )} after a One-Way Modifier, please review your ordering.`,
         );
-        list.splice(list.length - 1, 0, entry);
       }
     } else {
-      list.push(entry);
+      list.splice(list.length - 1, 0, entry);
     }
   } else {
     metaTable[<string>field] = [entry];
