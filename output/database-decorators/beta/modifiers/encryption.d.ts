@@ -8,19 +8,19 @@ type Options = {
     /** Initialization Vector size. */
     ivSize?: number;
 };
-type Meta = {
-    iv: string;
-    authTag?: string;
-};
+type Meta = {};
+type LockedType = [ciphertext: string, iv: string, authTag?: string];
 /**
  * Encryption modifier. enables the use of {@link Encrypted} on table fields.
  *
  * These fields are stored encrypted in the database.
  */
-export declare class EncryptionModifier extends TwoWayModifier<string, [], Meta, Options> {
-    lock(locked_value: string | undefined, value: unknown): string;
-    unlock(locked_value: string): any;
-    unlockrequest(data: DatabaseDev.ValueProxy.Proxy<string>): DatabaseDev.ValueProxy.Proxy<unknown>;
+export declare class EncryptionModifier extends TwoWayModifier<LockedType, [], Meta, Options> {
+    readonly autolock = true;
+    lock(_locked_value: LockedType | undefined, value: unknown): LockedType;
+    readonly autounlock = true;
+    unlock([locked_value, iv_str, authTag]: LockedType): unknown;
+    unlockrequest(data: DatabaseDev.ValueProxy.Proxy<LockedType>): DatabaseDev.ValueProxy.Proxy<unknown>;
     [MixinSymbol]: {
         new (): {};
     };
