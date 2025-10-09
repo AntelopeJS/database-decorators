@@ -1,6 +1,7 @@
 import * as DatabaseDev from '@ajs/database/beta';
 import { Constructible, getMetadata } from '../common';
 
+export const EventsSymbol = Symbol();
 export const MixinSymbol = Symbol();
 
 export type MixinType<T> = T extends { [MixinSymbol]: infer A } ? A : never;
@@ -81,17 +82,33 @@ interface InternalType {
   data: Record<string, any>;
 }
 
+interface ModifiedField {
+  id: string;
+  modifier: Modifier;
+  metaRef: { _ref: any };
+}
+
+type ModifierEvents = Record<string, <T>(this: Modifier, object: T, field: PropertyKey, ...args: unknown[]) => void>;
+type ModifierWithEvents = Modifier & Record<typeof EventsSymbol, ModifierEvents>;
+
+interface FieldEvent {
+  field: PropertyKey;
+  modifier: ModifierWithEvents;
+}
+
 export class ModifiersStaticMetadata {
   public static key = Symbol();
 
-  [key: string]: Array<{ id: string; modifier: Modifier; metaRef: { _ref: any } }>;
+  public fields: Record<string, Array<ModifiedField>> = {};
+
+  public events = new Map<string, Array<FieldEvent>>();
 }
 
 function withRef<T extends Modifier, U>(
   internal: InternalType,
-  id: ModifiersStaticMetadata[string][number]['id'],
-  modifier: ModifiersStaticMetadata[string][number]['modifier'],
-  metaRef: ModifiersStaticMetadata[string][number]['metaRef'],
+  id: ModifiedField['id'],
+  modifier: ModifiedField['modifier'],
+  metaRef: ModifiedField['metaRef'],
   callback: (modifier: T) => U,
 ): U {
   metaRef._ref = internal.meta[id];
@@ -117,7 +134,7 @@ export class ModifiersDynamicMetadata {
   }
 
   canGet(field: string) {
-    const list = this.staticMeta[field];
+    const list = this.staticMeta.fields[field];
     const lastModifier = list[list.length - 1].modifier;
     if ((<any>lastModifier).autolock) {
       return true;
@@ -138,7 +155,7 @@ export class ModifiersDynamicMetadata {
     if (!this.canGet(field)) {
       return;
     }
-    const list = this.staticMeta[field];
+    const list = this.staticMeta.fields[field];
     let value = internal.data[field];
     for (const { id, modifier, metaRef } of list) {
       if ('unlock' in modifier && value !== undefined) {
@@ -157,7 +174,7 @@ export class ModifiersDynamicMetadata {
   }
 
   canSet(field: string) {
-    const list = this.staticMeta[field];
+    const list = this.staticMeta.fields[field];
     return !list.some(
       ({ id, modifier }) => !(<any>modifier).autolock && 'lock' in modifier && !(id in this.fields[field]),
     );
@@ -168,7 +185,7 @@ export class ModifiersDynamicMetadata {
       this.floating[field] = value;
       return;
     }
-    const list = this.staticMeta[field];
+    const list = this.staticMeta.fields[field];
 
     // TODO: should maybe cache this
     const prevlist: {
@@ -217,6 +234,18 @@ function getInternal(object: any): InternalType {
   return object._internal;
 }
 
+/**
+ * - `Database`: locked plain object
+ *   - Complete data with encoded _internal field
+ *   - ex: `{ plain: 'value', _internal: { [..] } }`
+ * - `Instance`: class instance
+ *   - Complete data with prototype attached and accessors
+ *   - ex: `Table { plain: 'value', special: (accessor) }`
+ * - `Plaindata`: unlocked plain object
+ *   - Subset of existing data from locked object
+ *   - ex: `{ plain: 'value', special: 'data' }`
+ */
+
 export function fromPlainData<T extends Constructible>(rawObject: Record<string, any>, TableClass: T): InstanceType<T> {
   const shallowCopy: Record<string, any> = {};
   // Attach prototype
@@ -224,6 +253,7 @@ export function fromPlainData<T extends Constructible>(rawObject: Record<string,
   for (const [key, val] of Object.entries(rawObject)) {
     shallowCopy[key] = val;
   }
+  triggerEvent(shallowCopy, 'fromPlainData', rawObject);
   return shallowCopy as InstanceType<T>;
 }
 
@@ -231,9 +261,10 @@ export function toPlainData<T extends { constructor: any }>(object: T): Record<s
   const metaTable = getMetadata(object.constructor, ModifiersStaticMetadata);
   const result = { ...object };
   delete (<any>result)._internal;
-  for (const field of Object.keys(metaTable)) {
+  for (const field of Object.keys(metaTable.fields)) {
     result[<keyof T>field] = object[<keyof T>field]; // Populate unlocked fields
   }
+  triggerEvent(object, 'toPlainData', result);
   return result;
 }
 
@@ -242,11 +273,14 @@ export function fromDatabase<T extends Constructible>(rawObject: any, TableClass
   const shallowCopy = { ...rawObject };
   // Attach prototype
   Object.setPrototypeOf(shallowCopy, TableClass.prototype);
+  triggerEvent(shallowCopy, 'fromDatabase', rawObject);
   return shallowCopy;
 }
 
 export function toDatabase<T extends { constructor: any }>(object: T): Record<string, any> {
-  return { ...object };
+  const result = { ...object };
+  triggerEvent(object, 'toDatabase', result);
+  return result;
 }
 
 type ExtractModifierOptions<T> = T extends Modifier<any, infer Options> ? Options : undefined;
@@ -279,7 +313,7 @@ export function attachModifier<T extends Constructible, M extends Constructible<
   const metaTable = getMetadata(TableClass, ModifiersStaticMetadata);
   // Add Modifier to TableClass[field] with options
   if (field in metaTable) {
-    const list = metaTable[<string>field];
+    const list = metaTable.fields[<string>field];
     const last = list[list.length - 1];
     if (isWriteOnly(last.modifier)) {
       if (isWriteOnly(entry.modifier)) {
@@ -299,7 +333,22 @@ export function attachModifier<T extends Constructible, M extends Constructible<
       list.splice(list.length - 1, 0, entry);
     }
   } else {
-    metaTable[<string>field] = [entry];
+    metaTable.fields[<string>field] = [entry];
+  }
+
+  if (EventsSymbol in entry.modifier) {
+    const events = entry.modifier[EventsSymbol] as Record<string, unknown>
+    for (const event of Object.keys(events)) {
+      if (!metaTable.events.has(event)) {
+        metaTable.events.set(event, []);
+      }
+      if (typeof events[event] === 'function') {
+        metaTable.events.get(event)!.push({
+          field,
+          modifier: entry.modifier as ModifierWithEvents
+        });
+      }
+    }
   }
 
   Object.defineProperty(TableClass.prototype, field, {
@@ -324,8 +373,8 @@ export function getModifiedFields<T extends { constructor: any }, M extends Cons
   Modifier: M,
 ): (keyof T)[] {
   const metaTable = getMetadata(object.constructor, ModifiersStaticMetadata);
-  return Object.keys(metaTable).filter((field) =>
-    metaTable[field]?.find(({ id }) => id === Modifier.name),
+  return Object.keys(metaTable.fields).filter((field) =>
+    metaTable.fields[field]?.find(({ id }) => id === Modifier.name),
   ) as (keyof T)[];
 }
 
@@ -336,8 +385,8 @@ export function unlock<T extends { constructor: any }, M extends Constructible<M
   ...args: ExtractModifierArgs<InstanceType<M>>
 ) {
   const metaTable = getMetadata(object.constructor, ModifiersStaticMetadata);
-  const usedFields = (fields ?? (Object.keys(metaTable) as Array<keyof T>)).filter((field) =>
-    metaTable[<string>field]?.find(({ id }) => id === Modifier.name),
+  const usedFields = (fields ?? (Object.keys(metaTable.fields) as Array<keyof T>)).filter((field) =>
+    metaTable.fields[<string>field]?.find(({ id }) => id === Modifier.name),
   );
   // Get metadata
   const meta = getMetadata(object, ModifiersDynamicMetadata);
@@ -369,7 +418,7 @@ export function unlockrequest<T extends {}, K extends keyof T>(
   const meta = (<any>object)('_internal')('meta');
   const metaTable = getMetadata(table, ModifiersStaticMetadata);
   return (
-    metaTable[<string>field]?.reduce(
+    metaTable.fields[<string>field]?.reduce(
       (data, { id, modifier }) => {
         if (isWriteOnly(modifier)) {
           return data;
@@ -389,8 +438,8 @@ export function lock<T extends { constructor: any }, M extends Constructible<Mod
   ...args: ExtractModifierArgs<InstanceType<M>> | []
 ) {
   const metaTable = getMetadata(object.constructor, ModifiersStaticMetadata);
-  const usedFields = (fields ?? (Object.keys(metaTable) as Array<keyof T>)).filter((field) =>
-    metaTable[<string>field]?.find(({ id }) => id === Modifier.name),
+  const usedFields = (fields ?? (Object.keys(metaTable.fields) as Array<keyof T>)).filter((field) =>
+    metaTable.fields[<string>field]?.find(({ id }) => id === Modifier.name),
   );
   // Get metadata
   const meta = getMetadata(object, ModifiersDynamicMetadata);
@@ -408,7 +457,7 @@ export function testValue<T extends { constructor: any }, K extends keyof T>(obj
   const meta = getMetadata(object, ModifiersDynamicMetadata);
   const internal = getInternal(object);
   let val: unknown = internal.data[<string>field];
-  for (const { id, modifier, metaRef } of metaTable[<string>field]) {
+  for (const { id, modifier, metaRef } of metaTable.fields[<string>field]) {
     const args = meta.fields[<string>field][id] || ((<any>modifier).autolock && []);
     if (!args) return false;
     if (isWriteOnly(modifier)) {
@@ -425,4 +474,16 @@ export function testValue<T extends { constructor: any }, K extends keyof T>(obj
     }
   }
   return val === value;
+}
+
+export function triggerEvent<T extends { constructor: any }>(object: T, event: string, ...args: unknown[]) {
+  const metaTable = getMetadata(object.constructor, ModifiersStaticMetadata);
+
+  if (!metaTable.events.has(event)) {
+    return;
+  }
+
+  for (const {field, modifier} of metaTable.events.get(event)!) {
+    modifier[EventsSymbol][event].apply(modifier, [object, field, ...args]);
+  }
 }
