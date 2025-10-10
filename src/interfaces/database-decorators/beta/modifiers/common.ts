@@ -231,7 +231,8 @@ function getInternal(object: any): InternalType {
   return object._internal;
 }
 
-/**
+/* Data stages:
+ *
  * - `Database`: locked plain object
  *   - Complete data with encoded _internal field
  *   - ex: `{ plain: 'value', _internal: { [..] } }`
