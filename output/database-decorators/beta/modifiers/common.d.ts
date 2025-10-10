@@ -32,15 +32,17 @@ interface InternalType {
     meta: Record<string, object>;
     data: Record<string, any>;
 }
+interface ModifiedField {
+    id: string;
+    modifier: Modifier;
+    metaRef: {
+        _ref: any;
+    };
+}
 export declare class ModifiersStaticMetadata {
     static key: symbol;
-    [key: string]: Array<{
-        id: string;
-        modifier: Modifier;
-        metaRef: {
-            _ref: any;
-        };
-    }>;
+    fields: Record<string, Array<ModifiedField>>;
+    events: Map<string, [field: string, modified: ModifiedField][]>;
 }
 export declare class ModifiersDynamicMetadata {
     static key: symbol;
@@ -81,4 +83,7 @@ export declare function lock<T extends {
 export declare function testValue<T extends {
     constructor: any;
 }, K extends keyof T>(object: T, field: K, value: T[K]): unknown;
+export declare function triggerEvent<T extends {
+    constructor: any;
+}>(object: T, event: string, ...args: unknown[]): void;
 export {};
