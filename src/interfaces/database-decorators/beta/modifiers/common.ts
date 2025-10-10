@@ -1,7 +1,6 @@
 import * as DatabaseDev from '@ajs/database/beta';
 import { Constructible, getMetadata } from '../common';
 
-export const EventsSymbol = Symbol();
 export const MixinSymbol = Symbol();
 
 export type MixinType<T> = T extends { [MixinSymbol]: infer A } ? A : never;
@@ -77,6 +76,10 @@ function isWriteOnly(modifier: Modifier) {
   return 'lock' in modifier && !('unlock' in modifier);
 }
 
+function isOnlyEvents(modifier: Modifier) {
+  return !('lock' in modifier);
+}
+
 interface InternalType {
   meta: Record<string, object>;
   data: Record<string, any>;
@@ -88,20 +91,14 @@ interface ModifiedField {
   metaRef: { _ref: any };
 }
 
-type ModifierEvents = Record<string, <T>(this: Modifier, object: T, field: PropertyKey, ...args: unknown[]) => void>;
-type ModifierWithEvents = Modifier & Record<typeof EventsSymbol, ModifierEvents>;
-
-interface FieldEvent {
-  field: PropertyKey;
-  modifier: ModifierWithEvents;
-}
+type ModifierEvent = <T>(this: Modifier, object: T, field: PropertyKey, ...args: unknown[]) => void;
 
 export class ModifiersStaticMetadata {
   public static key = Symbol();
 
   public fields: Record<string, Array<ModifiedField>> = {};
 
-  public events = new Map<string, Array<FieldEvent>>();
+  public events = new Map<string, Array<[field: string, modified: ModifiedField]>>();
 }
 
 function withRef<T extends Modifier, U>(
@@ -128,7 +125,7 @@ export class ModifiersDynamicMetadata {
 
   constructor(target: any) {
     this.staticMeta = getMetadata(target.constructor, ModifiersStaticMetadata);
-    for (const field of Object.keys(this.staticMeta)) {
+    for (const field of Object.keys(this.staticMeta.fields)) {
       this.fields[field] = {};
     }
   }
@@ -286,6 +283,12 @@ export function toDatabase<T extends { constructor: any }>(object: T): Record<st
 type ExtractModifierOptions<T> = T extends Modifier<any, infer Options> ? Options : undefined;
 type ExtractModifierArgs<T> = T extends OneWayModifier<any, infer Args> ? Args : [];
 
+const ignoredEventNames = {
+  constructor: true,
+  lock: true,
+  unlock: true,
+};
+
 export function attachModifier<T extends Constructible, M extends Constructible<Modifier>>(
   TableClass: T,
   Modifier: M,
@@ -311,60 +314,57 @@ export function attachModifier<T extends Constructible, M extends Constructible<
 
   // Mark TableClass as special
   const metaTable = getMetadata(TableClass, ModifiersStaticMetadata);
-  // Add Modifier to TableClass[field] with options
-  if (field in metaTable) {
-    const list = metaTable.fields[<string>field];
-    const last = list[list.length - 1];
-    if (isWriteOnly(last.modifier)) {
-      if (isWriteOnly(entry.modifier)) {
-        throw new Error(
-          `Attempted adding Modifier ${entry.id} on ${TableClass.name}.${<string>(
-            field
-          )} but it already has a One-Way Modifier`,
-        );
+
+  if (!isOnlyEvents(entry.modifier)) {
+    // Add Modifier to TableClass[field] with options
+    if (field in metaTable) {
+      const list = metaTable.fields[<string>field];
+      const last = list[list.length - 1];
+      if (isWriteOnly(last.modifier)) {
+        if (isWriteOnly(entry.modifier)) {
+          throw new Error(
+            `Attempted adding Modifier ${entry.id} on ${TableClass.name}.${<string>(
+              field
+            )} but it already has a One-Way Modifier`,
+          );
+        } else {
+          throw new Error(
+            `Adding Modifier ${entry.id} on ${TableClass.name}.${<string>(
+              field
+            )} after a One-Way Modifier, please review your ordering.`,
+          );
+        }
       } else {
-        throw new Error(
-          `Adding Modifier ${entry.id} on ${TableClass.name}.${<string>(
-            field
-          )} after a One-Way Modifier, please review your ordering.`,
-        );
+        list.splice(list.length - 1, 0, entry);
       }
     } else {
-      list.splice(list.length - 1, 0, entry);
+      metaTable.fields[<string>field] = [entry];
     }
-  } else {
-    metaTable.fields[<string>field] = [entry];
+    Object.defineProperty(TableClass.prototype, field, {
+      get: function () {
+        return getMetadata(this, ModifiersDynamicMetadata).get(<string>field, getInternal(this));
+      },
+      set: function (value) {
+        getMetadata(this, ModifiersDynamicMetadata).set(<string>field, getInternal(this), value);
+      },
+    });
   }
 
-  if (EventsSymbol in entry.modifier) {
-    const events = entry.modifier[EventsSymbol] as Record<string, unknown>
-    for (const event of Object.keys(events)) {
-      if (!metaTable.events.has(event)) {
-        metaTable.events.set(event, []);
-      }
-      if (typeof events[event] === 'function') {
-        metaTable.events.get(event)!.push({
-          field,
-          modifier: entry.modifier as ModifierWithEvents
-        });
-      }
-    }
-  }
-
-  Object.defineProperty(TableClass.prototype, field, {
-    get: function () {
-      return getMetadata(this, ModifiersDynamicMetadata).get(<string>field, getInternal(this));
-    },
-    set: function (value) {
-      getMetadata(this, ModifiersDynamicMetadata).set(<string>field, getInternal(this), value);
-    },
-  });
   if (!('toJSON' in TableClass.prototype)) {
     Object.defineProperty(TableClass.prototype, 'toJSON', {
       value: function () {
         return toPlainData(this);
       },
     });
+  }
+
+  for (const event of Object.getOwnPropertyNames(Modifier.prototype)) {
+    if (!(event in ignoredEventNames) && typeof Modifier.prototype[event] === 'function') {
+      if (!metaTable.events.has(event)) {
+        metaTable.events.set(event, []);
+      }
+      metaTable.events.get(event)!.push([field as string, entry]);
+    }
   }
 }
 
@@ -483,7 +483,11 @@ export function triggerEvent<T extends { constructor: any }>(object: T, event: s
     return;
   }
 
-  for (const {field, modifier} of metaTable.events.get(event)!) {
-    modifier[EventsSymbol][event].apply(modifier, [object, field, ...args]);
+  const internal = getInternal(object);
+
+  for (const [field, { id, modifier, metaRef }] of metaTable.events.get(event)!) {
+    withRef(internal, id, modifier, metaRef, (modifier: Modifier) =>
+      (<ModifierEvent>modifier[<keyof Modifier>event])(object, field, ...args),
+    );
   }
 }

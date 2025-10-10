@@ -102,8 +102,12 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
      * @returns Insert result
      */
     public insert(obj: DeepPartial<T> | Array<DeepPartial<T>>, options?: DatabaseDev.Options.Insert) {
-      triggerEvent(obj, 'insert');
-      return this.table.insert(Array.isArray(obj) ? obj.map(Model.toDatabase) : Model.toDatabase(obj), options).run();
+      const converter = (entry: any) => {
+        const instance = Model.fromPlainData(entry);
+        triggerEvent(instance, 'insert');
+        return Model.toDatabase(instance);
+      };
+      return this.table.insert(Array.isArray(obj) ? obj.map(converter) : converter(obj), options).run();
     }
 
     /**
@@ -135,18 +139,17 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
       options2?: DatabaseDev.Options.Update,
     ) {
       if (typeof obj === 'string') {
-        triggerEvent(options!, 'update');
-        return this.table
-          .get(obj)
-          .update(Model.toDatabase(<DeepPartial<T>>options), options2)
-          .run();
+        const instance = Model.fromPlainData(<DeepPartial<T>>options);
+        triggerEvent(instance, 'update');
+        return this.table.get(obj).update(Model.toDatabase(instance), options2).run();
       }
-      triggerEvent(obj, 'update');
+      const instance = Model.fromPlainData(obj);
+      triggerEvent(instance, 'update');
       const id = (<any>obj)[primaryKey];
       assert(id !== undefined, 'Missing primary key in object update.');
       return this.table
         .get(id)
-        .update(Model.toDatabase(obj), <DatabaseDev.Options.Update>options)
+        .update(Model.toDatabase(instance), <DatabaseDev.Options.Update>options)
         .run();
     }
 
