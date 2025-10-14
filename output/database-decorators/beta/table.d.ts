@@ -48,5 +48,5 @@ type AwaitableArray<T> = Promise<T | T[]> | T | T[];
  *
  * @param generator Data generator
  */
-export declare const Fixture: <T extends typeof Table>(generator: (p: T) => AwaitableArray<InstanceType<T>>) => ClassDecorator<T>;
+export declare const Fixture: <T extends typeof Table>(generator: (p: T) => AwaitableArray<Partial<InstanceType<T>>>) => ClassDecorator<T>;
 export {};
