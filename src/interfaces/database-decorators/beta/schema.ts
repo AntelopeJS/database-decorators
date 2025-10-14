@@ -1,9 +1,9 @@
-import { MakeClassDecorator, ClassDecorator } from '@ajs/core/beta/decorators';
+import { MakeClassDecorator, ClassDecorator, Class } from '@ajs/core/beta/decorators';
 import { Table } from './table';
 import { InitializeDatabase } from './database';
 
 export const DEFAULT_SCHEMA = Symbol('default');
-export type DatabaseSchema = Record<string, Table>;
+export type DatabaseSchema = Record<string, Class<Table>>;
 
 const databasesSchema: Record<string | symbol, DatabaseSchema> = {};
 
