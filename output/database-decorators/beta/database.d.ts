@@ -1,4 +1,5 @@
 import { Table } from './table';
+import { Class } from '@ajs/core/beta/decorators';
 export type Status = 'created' | 'unchanged';
 export interface InitInfo {
     /** Database creation status. */
@@ -15,4 +16,4 @@ export interface InitInfo {
  * @param tables Table class list
  * @returns Initialization result
  */
-export declare function InitializeDatabase(databaseName: string, tables: Record<string, Table>): Promise<InitInfo>;
+export declare function InitializeDatabase(databaseName: string, tables: Record<string, Class<Table>>): Promise<InitInfo>;
