@@ -84,7 +84,7 @@ type AwaitableArray<T> = Promise<T | T[]> | T | T[];
  * @param generator Data generator
  */
 export const Fixture: <T extends typeof Table>(
-  generator: (p: T) => AwaitableArray<InstanceType<T>>,
+  generator: (p: T) => AwaitableArray<Partial<InstanceType<T>>>,
 ) => ClassDecorator<T> = MakeClassDecorator((target, generator) => {
   const metadata = getMetadata(target, DatumStaticMetadata);
   metadata.generator = generator;
