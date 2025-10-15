@@ -1,6 +1,8 @@
 import { CreateDatabase, Database, ListDatabases } from '@ajs/database/beta';
 import { Table } from './table';
 import { DatumStaticMetadata, getMetadata } from './common';
+import { fromPlainData, toDatabase, triggerEvent } from './modifiers/common';
+import { Class } from '@ajs/core/beta/decorators';
 
 export type Status = 'created' | 'unchanged';
 
@@ -20,7 +22,10 @@ export interface InitInfo {
  * @param tables Table class list
  * @returns Initialization result
  */
-export async function InitializeDatabase(databaseName: string, tables: Record<string, Table>): Promise<InitInfo> {
+export async function InitializeDatabase(
+  databaseName: string,
+  tables: Record<string, Class<Table>>,
+): Promise<InitInfo> {
   const initInfo: InitInfo = { databaseStatus: 'created', tablesStatus: {}, oldTables: [] };
 
   const databases = await ListDatabases();
@@ -46,7 +51,14 @@ export async function InitializeDatabase(databaseName: string, tables: Record<st
         if (metadata.generator) {
           const toInsert = await metadata.generator(table);
           if (toInsert) {
-            await database.table(tableName).insert(toInsert);
+            const converter = (entry: any) => {
+              const instance = fromPlainData(entry, table);
+              triggerEvent(instance, 'insert');
+              return toDatabase(instance);
+            };
+            await database
+              .table(tableName)
+              .insert(Array.isArray(toInsert) ? toInsert.map(converter) : converter(toInsert));
           }
         }
       }
