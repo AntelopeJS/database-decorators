@@ -18,10 +18,13 @@ type Options = {
  */
 export class LocalizationModifier extends ContainerModifier<{}, Options> {
   public override unlock(locked_value: Record<string, unknown>, key: string) {
-    if (locked_value[key] !== undefined) {
-      return locked_value[key];
+    const unlocked = super.unlock(locked_value, key);
+    if (unlocked !== undefined) {
+      return unlocked;
     }
-    return this.options.fallbackLocale ? locked_value[this.options.fallbackLocale] : undefined;
+    if (this.options.fallbackLocale) {
+      return super.unlock(locked_value, this.options.fallbackLocale);
+    }
   }
 
   public override unlockrequest(

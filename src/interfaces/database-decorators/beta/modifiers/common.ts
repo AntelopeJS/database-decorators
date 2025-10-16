@@ -53,6 +53,9 @@ export class ContainerModifier<Meta extends {} = {}, Options extends {} = {}> ex
   Options
 > {
   public override lock(locked_value: Record<string, unknown> | undefined, value: unknown, key: string) {
+    if (key === '*') {
+      return value as Record<string, unknown>;
+    }
     return locked_value
       ? {
           ...locked_value,
@@ -61,7 +64,7 @@ export class ContainerModifier<Meta extends {} = {}, Options extends {} = {}> ex
       : { [key]: value };
   }
   public override unlock(locked_value: Record<string, unknown>, key: string) {
-    return locked_value[key];
+    return key === '*' ? locked_value : locked_value[key];
   }
   public override unlockrequest(
     data: DatabaseDev.ValueProxy.Proxy<Record<string, unknown>>,
