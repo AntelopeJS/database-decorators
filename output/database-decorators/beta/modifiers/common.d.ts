@@ -22,9 +22,7 @@ export declare class TwoWayModifier<LockedType, Args extends any[] = [], Meta ex
 export declare class ContainerModifier<Meta extends {} = {}, Options extends {} = {}> extends TwoWayModifier<Record<string, unknown>, [
     key: string
 ], Meta, Options> {
-    lock(locked_value: Record<string, unknown> | undefined, value: unknown, key: string): {
-        [x: string]: unknown;
-    };
+    lock(locked_value: Record<string, unknown> | undefined, value: unknown, key: string): Record<string, unknown>;
     unlock(locked_value: Record<string, unknown>, key: string): unknown;
     unlockrequest(data: DatabaseDev.ValueProxy.Proxy<Record<string, unknown>>, meta: DatabaseDev.ValueProxy.Proxy<Meta>, key: DatabaseDev.ValueProxy.ProxyOrVal<string>): DatabaseDev.ValueProxy.Proxy<unknown>;
 }
