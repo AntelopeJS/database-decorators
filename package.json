@@ -1,6 +1,6 @@
 {
   "name": "@antelopejs/database-decorators",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A flexible ORM interface that brings database decorators for antelopejs",
   "keywords": [
     "antelopejs",
