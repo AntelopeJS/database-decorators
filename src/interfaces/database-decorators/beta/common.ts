@@ -1,23 +1,28 @@
-export type Constructible<T = {}, A extends any[] = any[]> = { new (...args: A): T };
+export type Constructible<T = object, A extends unknown[] = unknown[]> = new (...args: A) => T;
 
 export type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends Array<infer U1>
     ? Array<DeepPartial<U1>>
     : T[K] extends ReadonlyArray<infer U2>
       ? ReadonlyArray<DeepPartial<U2>>
-      : DeepPartial<T[K]>;
+      : T[K] extends object
+        ? DeepPartial<T[K]>
+        : T[K];
 };
 
-/**
- * Table class Metadata.
- */
+export type DatumGeneratorOutput = Record<string, unknown> | Array<Record<string, unknown>> | undefined;
+export type DatumGenerator = (tableClass: Constructible) => DatumGeneratorOutput | Promise<DatumGeneratorOutput>;
+
+export interface MetadataClass<TMetadata> extends Constructible<TMetadata> {
+  key: symbol;
+}
+
 export class DatumStaticMetadata {
   public static key = Symbol();
 
   public readonly indexes: Record<string, Array<string>> = {};
   public primary: string = 'id';
-
-  public generator?: (cl: any) => any;
+  public generator?: DatumGenerator;
 
   addIndex(key: string, group: string) {
     if (!(group in this.indexes)) {
@@ -27,16 +32,16 @@ export class DatumStaticMetadata {
   }
 }
 
-export function getMetadata<T, U extends {}>(
-  target: U,
-  meta: Constructible<T, [U]> & { key: symbol },
+export function getMetadata<TMetadata, TTarget extends object>(
+  target: TTarget,
+  metadataClass: MetadataClass<TMetadata>,
   inherit: boolean = true,
-): T {
-  let data = Reflect.getOwnMetadata(meta.key, target) as T;
+): TMetadata {
+  let data = Reflect.getOwnMetadata(metadataClass.key, target) as TMetadata | undefined;
   if (!data) {
-    const proto = Object.getPrototypeOf(target);
-    data = (inherit && proto && Reflect.getOwnMetadata(meta.key, proto)) || new meta(target);
-    Reflect.defineMetadata(meta.key, data, target);
+    const prototype = Object.getPrototypeOf(target) as TTarget | null;
+    data = (inherit && prototype && Reflect.getOwnMetadata(metadataClass.key, prototype)) || new metadataClass(target);
+    Reflect.defineMetadata(metadataClass.key, data, target);
   }
   return data;
 }
