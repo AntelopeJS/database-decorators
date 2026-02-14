@@ -1,4 +1,4 @@
-# @antelopejs/redis
+# @antelopejs/database-decorators
 
 ## Code Conventions
 
