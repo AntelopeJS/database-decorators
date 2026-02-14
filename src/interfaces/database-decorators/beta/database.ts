@@ -1,4 +1,10 @@
-import { CreateDatabase, Database, ListDatabases } from '@ajs/database/beta';
+import {
+  CreateDatabase,
+  Database,
+  ListDatabases,
+  type Database as DatabaseType,
+  type DeepPartial,
+} from '@ajs/database/beta';
 import { Class } from '@ajs/core/beta/decorators';
 import { Table } from './table';
 import { DatumGeneratorOutput, DatumStaticMetadata, getMetadata } from './common';
@@ -14,7 +20,7 @@ export interface InitInfo {
 
 type TableDefinitions = Record<string, Class<Table>>;
 type TableEntry = Record<string, unknown>;
-type DatabaseInstance = ReturnType<typeof Database>;
+type DatabaseInstance = DatabaseType<Record<string, TableEntry>>;
 
 const CreatedStatus: Status = 'created';
 const UnchangedStatus: Status = 'unchanged';
@@ -27,10 +33,7 @@ interface TableInitializationContext {
   initInfo: InitInfo;
 }
 
-export async function InitializeDatabase(
-  databaseName: string,
-  tables: TableDefinitions,
-): Promise<InitInfo> {
+export async function InitializeDatabase(databaseName: string, tables: TableDefinitions): Promise<InitInfo> {
   const initInfo = createInitInfo();
   const database = await ensureDatabaseExists(databaseName, initInfo);
   const tableList = await database.tableList();
@@ -57,10 +60,10 @@ async function ensureDatabaseExists(databaseName: string, initInfo: InitInfo): P
   const databases = await ListDatabases();
   if (!databases.includes(databaseName)) {
     await CreateDatabase(databaseName);
-    return Database(databaseName);
+    return Database<Record<string, TableEntry>>(databaseName);
   }
   initInfo.databaseStatus = UnchangedStatus;
-  return Database(databaseName);
+  return Database<Record<string, TableEntry>>(databaseName);
 }
 
 async function initializeTable(context: TableInitializationContext): Promise<void> {
@@ -93,7 +96,10 @@ async function insertFixtureData(
   if (rows.length === 0) {
     return;
   }
-  await database.table(tableName).insert(rows.length === 1 ? rows[0] : rows);
+  const payload = (rows.length === 1 ? rows[0] : rows) as unknown as
+    | DeepPartial<TableEntry>
+    | Array<DeepPartial<TableEntry>>;
+  await database.table(tableName).insert(payload);
 }
 
 function toFixtureRows(fixtureData: DatumGeneratorOutput, tableClass: Class<Table>): TableEntry[] {
@@ -125,9 +131,15 @@ async function createMissingIndexes(
   );
 }
 
-function createIndex(database: DatabaseInstance, tableName: string, group: string, fields: string[]): Promise<void> {
+async function createIndex(
+  database: DatabaseInstance,
+  tableName: string,
+  group: string,
+  fields: string[],
+): Promise<void> {
   if (fields.length === 1 && fields[0] === group) {
-    return database.table(tableName).indexCreate(group);
+    await database.table(tableName).indexCreate(group);
+    return;
   }
-  return database.table(tableName).indexCreate(group, ...fields);
+  await database.table(tableName).indexCreate(group, ...fields);
 }

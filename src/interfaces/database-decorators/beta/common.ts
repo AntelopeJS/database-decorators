@@ -37,11 +37,15 @@ export function getMetadata<TMetadata, TTarget extends object>(
   metadataClass: MetadataClass<TMetadata>,
   inherit: boolean = true,
 ): TMetadata {
-  let data = Reflect.getOwnMetadata(metadataClass.key, target) as TMetadata | undefined;
-  if (!data) {
-    const prototype = Object.getPrototypeOf(target) as TTarget | null;
-    data = (inherit && prototype && Reflect.getOwnMetadata(metadataClass.key, prototype)) || new metadataClass(target);
-    Reflect.defineMetadata(metadataClass.key, data, target);
+  const existingMetadata = Reflect.getOwnMetadata(metadataClass.key, target) as TMetadata | undefined;
+  if (existingMetadata) {
+    return existingMetadata;
   }
-  return data;
+
+  const prototype = Object.getPrototypeOf(target) as TTarget | null;
+  const inheritedMetadata =
+    inherit && prototype ? (Reflect.getOwnMetadata(metadataClass.key, prototype) as TMetadata | undefined) : undefined;
+  const metadata = inheritedMetadata ?? new metadataClass(target);
+  Reflect.defineMetadata(metadataClass.key, metadata, target);
+  return metadata;
 }
