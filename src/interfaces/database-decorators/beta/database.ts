@@ -1,8 +1,14 @@
-import { CreateDatabase, Database, ListDatabases } from '@ajs/database/beta';
-import { Table } from './table';
-import { DatumStaticMetadata, getMetadata } from './common';
-import { fromPlainData, toDatabase, triggerEvent } from './modifiers/common';
+import {
+  CreateDatabase,
+  Database,
+  ListDatabases,
+  type Database as DatabaseType,
+  type DeepPartial,
+} from '@ajs/database/beta';
 import { Class } from '@ajs/core/beta/decorators';
+import { Table } from './table';
+import { DatumGeneratorOutput, DatumStaticMetadata, getMetadata } from './common';
+import { fromPlainData, toDatabase, triggerEvent } from './modifiers/common';
 
 export type Status = 'created' | 'unchanged';
 
@@ -15,6 +21,21 @@ export interface InitInfo {
   oldTables: string[];
 }
 
+type TableDefinitions = Record<string, Class<Table>>;
+type TableEntry = Record<string, unknown>;
+type DatabaseInstance = DatabaseType<Record<string, TableEntry>>;
+
+const CreatedStatus: Status = 'created';
+const UnchangedStatus: Status = 'unchanged';
+
+interface TableInitializationContext {
+  database: DatabaseInstance;
+  tableName: string;
+  tableClass: Class<Table>;
+  tableList: string[];
+  initInfo: InitInfo;
+}
+
 /**
  * Initializes a database with the given name and tables.
  *
@@ -22,63 +43,113 @@ export interface InitInfo {
  * @param tables Table class list
  * @returns Initialization result
  */
-export async function InitializeDatabase(
-  databaseName: string,
-  tables: Record<string, Class<Table>>,
-): Promise<InitInfo> {
-  const initInfo: InitInfo = { databaseStatus: 'created', tablesStatus: {}, oldTables: [] };
-
-  const databases = await ListDatabases();
-
-  if (databases.includes(databaseName)) {
-    initInfo.databaseStatus = 'unchanged';
-  } else {
-    await CreateDatabase(databaseName);
-  }
-
-  const database = Database(databaseName);
+export async function InitializeDatabase(databaseName: string, tables: TableDefinitions): Promise<InitInfo> {
+  const initInfo = createInitInfo();
+  const database = await ensureDatabaseExists(databaseName, initInfo);
   const tableList = await database.tableList();
-
   await Promise.all(
-    Object.entries(tables).map(async ([tableName, table]) => {
-      const metadata = getMetadata(table, DatumStaticMetadata);
+    Object.entries(tables).map(([tableName, tableClass]) =>
+      initializeTable({
+        database,
+        tableName,
+        tableClass,
+        tableList,
+        initInfo,
+      }),
+    ),
+  );
+  initInfo.oldTables = tableList.filter((tableName) => !(tableName in tables));
+  return initInfo;
+}
 
-      if (tableList.includes(tableName)) {
-        initInfo.tablesStatus[tableName] = 'unchanged';
-      } else {
-        initInfo.tablesStatus[tableName] = 'created';
-        await database.tableCreate(tableName, { primary: metadata.primary });
-        if (metadata.generator) {
-          const toInsert = await metadata.generator(table);
-          if (toInsert) {
-            const converter = (entry: any) => {
-              const instance = fromPlainData(entry, table);
-              triggerEvent(instance, 'insert');
-              return toDatabase(instance);
-            };
-            await database
-              .table(tableName)
-              .insert(Array.isArray(toInsert) ? toInsert.map(converter) : converter(toInsert));
-          }
-        }
+function createInitInfo(): InitInfo {
+  return { databaseStatus: CreatedStatus, tablesStatus: {}, oldTables: [] };
+}
+
+async function ensureDatabaseExists(databaseName: string, initInfo: InitInfo): Promise<DatabaseInstance> {
+  const databases = await ListDatabases();
+  if (!databases.includes(databaseName)) {
+    await CreateDatabase(databaseName);
+    return Database<Record<string, TableEntry>>(databaseName);
+  }
+  initInfo.databaseStatus = UnchangedStatus;
+  return Database<Record<string, TableEntry>>(databaseName);
+}
+
+async function initializeTable(context: TableInitializationContext): Promise<void> {
+  const metadata = getMetadata(context.tableClass, DatumStaticMetadata);
+  await createTableIfMissing(context, metadata);
+  await createMissingIndexes(context.database, context.tableName, metadata);
+}
+
+async function createTableIfMissing(context: TableInitializationContext, metadata: DatumStaticMetadata): Promise<void> {
+  if (context.tableList.includes(context.tableName)) {
+    context.initInfo.tablesStatus[context.tableName] = UnchangedStatus;
+    return;
+  }
+  context.initInfo.tablesStatus[context.tableName] = CreatedStatus;
+  await context.database.tableCreate(context.tableName, { primary: metadata.primary });
+  await insertFixtureData(context.database, context.tableName, context.tableClass, metadata.generator);
+}
+
+async function insertFixtureData(
+  database: DatabaseInstance,
+  tableName: string,
+  tableClass: Class<Table>,
+  generator: DatumStaticMetadata['generator'],
+): Promise<void> {
+  if (!generator) {
+    return;
+  }
+  const fixtureData = await generator(tableClass);
+  const rows = toFixtureRows(fixtureData, tableClass);
+  if (rows.length === 0) {
+    return;
+  }
+  const payload = (rows.length === 1 ? rows[0] : rows) as unknown as
+    | DeepPartial<TableEntry>
+    | Array<DeepPartial<TableEntry>>;
+  await database.table(tableName).insert(payload);
+}
+
+function toFixtureRows(fixtureData: DatumGeneratorOutput, tableClass: Class<Table>): TableEntry[] {
+  const entries = fixtureData ? (Array.isArray(fixtureData) ? fixtureData : [fixtureData]) : [];
+  return entries.filter(isTableEntry).map((entry) => {
+    const instance = fromPlainData(entry, tableClass);
+    triggerEvent(instance, 'insert');
+    return toDatabase(instance) as TableEntry;
+  });
+}
+
+function isTableEntry(value: unknown): value is TableEntry {
+  return typeof value === 'object' && value !== null;
+}
+
+async function createMissingIndexes(
+  database: DatabaseInstance,
+  tableName: string,
+  metadata: DatumStaticMetadata,
+): Promise<void> {
+  const indexes = await database.table(tableName).indexList();
+  await Promise.all(
+    Object.entries(metadata.indexes).map(([group, fields]) => {
+      if (indexes.includes(group)) {
+        return Promise.resolve();
       }
-
-      const indexes = await database.table(tableName).indexList();
-
-      await Promise.all(
-        Object.entries(metadata.indexes).map(async ([group, fields]) => {
-          if (indexes.includes(group)) return;
-          if (fields.length === 1 && fields[0] === group) {
-            await database.table(tableName).indexCreate(group);
-          } else {
-            await database.table(tableName).indexCreate(group, ...fields);
-          }
-        }),
-      );
+      return createIndex(database, tableName, group, fields);
     }),
   );
+}
 
-  initInfo.oldTables = tableList.filter((tableName) => !(tableName in tables));
-
-  return initInfo;
+async function createIndex(
+  database: DatabaseInstance,
+  tableName: string,
+  group: string,
+  fields: string[],
+): Promise<void> {
+  if (fields.length === 1 && fields[0] === group) {
+    await database.table(tableName).indexCreate(group);
+    return;
+  }
+  await database.table(tableName).indexCreate(group, ...fields);
 }
