@@ -17,6 +17,9 @@ export interface MetadataClass<TMetadata> extends Constructible<TMetadata> {
   key: symbol;
 }
 
+/**
+ * Table class Metadata.
+ */
 export class DatumStaticMetadata {
   public static key = Symbol();
 

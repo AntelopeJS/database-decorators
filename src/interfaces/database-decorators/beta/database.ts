@@ -13,8 +13,11 @@ import { fromPlainData, toDatabase, triggerEvent } from './modifiers/common';
 export type Status = 'created' | 'unchanged';
 
 export interface InitInfo {
+  /** Database creation status. */
   databaseStatus: Status;
+  /** Tables creation status. */
   tablesStatus: Record<string, Status>;
+  /** Pre-existing tables that are no longer used. */
   oldTables: string[];
 }
 
@@ -33,6 +36,13 @@ interface TableInitializationContext {
   initInfo: InitInfo;
 }
 
+/**
+ * Initializes a database with the given name and tables.
+ *
+ * @param databaseName Database name
+ * @param tables Table class list
+ * @returns Initialization result
+ */
 export async function InitializeDatabase(databaseName: string, tables: TableDefinitions): Promise<InitInfo> {
   const initInfo = createInitInfo();
   const database = await ensureDatabaseExists(databaseName, initInfo);
