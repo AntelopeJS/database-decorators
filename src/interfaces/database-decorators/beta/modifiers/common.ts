@@ -321,7 +321,7 @@ export function attachModifier<T extends Constructible, M extends Constructible<
 
   if (!isOnlyEvents(entry.modifier)) {
     // Add Modifier to TableClass[field] with options
-    if (field in metaTable) {
+    if (field in metaTable.fields) {
       const list = metaTable.fields[<string>field];
       const last = list[list.length - 1];
       if (isWriteOnly(last.modifier)) {
@@ -343,15 +343,15 @@ export function attachModifier<T extends Constructible, M extends Constructible<
       }
     } else {
       metaTable.fields[<string>field] = [entry];
+      Object.defineProperty(TableClass.prototype, field, {
+        get: function () {
+          return getMetadata(this, ModifiersDynamicMetadata).get(<string>field, getInternal(this));
+        },
+        set: function (value) {
+          getMetadata(this, ModifiersDynamicMetadata).set(<string>field, getInternal(this), value);
+        },
+      });
     }
-    Object.defineProperty(TableClass.prototype, field, {
-      get: function () {
-        return getMetadata(this, ModifiersDynamicMetadata).get(<string>field, getInternal(this));
-      },
-      set: function (value) {
-        getMetadata(this, ModifiersDynamicMetadata).set(<string>field, getInternal(this), value);
-      },
-    });
   }
 
   if (!('toJSON' in TableClass.prototype)) {

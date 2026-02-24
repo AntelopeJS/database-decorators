@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { BasicDataModel, GetModel, StaticModel, DynamicModel } from '@ajs.local/database-decorators/beta/model';
 import { Table, Index } from '@ajs.local/database-decorators/beta/table';
+import { InitializeDatabase } from '@ajs.local/database-decorators/beta/database';
 import { Controller, Get, RequestContext } from '@ajs/api/beta';
 
 describe('Model - data operations', () => {
@@ -110,6 +111,8 @@ async function GetModelFromCacheTest() {
 
   const TestModel = BasicDataModel(TestTable, 'test_table');
 
+  await InitializeDatabase('test-db', { test_table: TestTable });
+
   const model1 = GetModel(TestModel, 'test-db');
   const model2 = GetModel(TestModel, 'test-db');
 
@@ -127,6 +130,9 @@ async function CreateNewModelWhenNotCachedTest() {
 
   const TestModel = BasicDataModel(TestTable, 'test_table');
 
+  await InitializeDatabase('db1', { test_table: TestTable });
+  await InitializeDatabase('db2', { test_table: TestTable });
+
   const model1 = GetModel(TestModel, 'db1');
   const model2 = GetModel(TestModel, 'db2');
 
@@ -142,6 +148,7 @@ async function HandleStaticModelDecoratorTest() {
     name!: string;
   }
   const TestModel = BasicDataModel(TestTable, 'test_table');
+  await InitializeDatabase('test-db', { test_table: TestTable });
   class _TestService extends Controller('/staticmodel') {
     @StaticModel(TestModel, 'test-db')
     model!: InstanceType<typeof TestModel>;
@@ -164,6 +171,7 @@ async function HandleDynamicModelDecoratorTest() {
     name!: string;
   }
   const TestModel = BasicDataModel(TestTable, 'test_table');
+  await InitializeDatabase('test-db', { test_table: TestTable });
   class _TestService extends Controller('/dynamicmodel/:database') {
     @DynamicModel(TestModel, (ctx: RequestContext) => ctx.routeParameters.database)
     model!: InstanceType<typeof TestModel>;
