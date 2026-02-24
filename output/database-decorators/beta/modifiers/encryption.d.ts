@@ -20,7 +20,7 @@ export declare class EncryptionModifier extends TwoWayModifier<LockedType, [], M
     lock(_locked_value: LockedType | undefined, value: unknown): LockedType;
     readonly autounlock = true;
     unlock([locked_value, iv_str, authTag]: LockedType): unknown;
-    unlockrequest(data: DatabaseDev.ValueProxy.Proxy<LockedType>): DatabaseDev.ValueProxy.Proxy<unknown>;
+    unlockrequest(data: DatabaseDev.ValueProxy<LockedType>): DatabaseDev.ValueProxy<unknown>;
     [MixinSymbol]: {
         new (): {};
     };

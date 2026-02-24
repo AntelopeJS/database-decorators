@@ -25,7 +25,7 @@ export class OneWayModifier<
 }
 
 type ProxyOrValArray<T extends any[]> = {
-  [K in keyof T]: DatabaseDev.ValueProxy.ProxyOrVal<T[K]>;
+  [K in keyof T]: DatabaseDev.ValueProxyOrValue<T[K]>;
 };
 
 export class TwoWayModifier<
@@ -38,10 +38,10 @@ export class TwoWayModifier<
     throw new Error('Unimplemented');
   }
   public unlockrequest(
-    _data: DatabaseDev.ValueProxy.Proxy<LockedType>,
-    _meta: DatabaseDev.ValueProxy.Proxy<Meta>,
+    _data: DatabaseDev.ValueProxy<LockedType>,
+    _meta: DatabaseDev.ValueProxy<Meta>,
     ..._args: ProxyOrValArray<Args>
-  ): DatabaseDev.ValueProxy.Proxy<unknown> {
+  ): DatabaseDev.ValueProxy<unknown> {
     throw new Error('Unimplemented');
   }
 }
@@ -67,11 +67,11 @@ export class ContainerModifier<Meta extends {} = {}, Options extends {} = {}> ex
     return key === '*' ? locked_value : locked_value[key];
   }
   public override unlockrequest(
-    data: DatabaseDev.ValueProxy.Proxy<Record<string, unknown>>,
-    meta: DatabaseDev.ValueProxy.Proxy<Meta>,
-    key: DatabaseDev.ValueProxy.ProxyOrVal<string>,
-  ): DatabaseDev.ValueProxy.Proxy<unknown> {
-    return data(key);
+    data: DatabaseDev.ValueProxy<Record<string, unknown>>,
+    meta: DatabaseDev.ValueProxy<Meta>,
+    key: DatabaseDev.ValueProxyOrValue<string>,
+  ): DatabaseDev.ValueProxy<unknown> {
+    return data.key(key);
   }
 }
 
@@ -406,20 +406,20 @@ export function unlock<T extends { constructor: any }, M extends Constructible<M
 
 type ModifierWithProxyArgs = {
   modifier: Constructible<TwoWayModifier<any, any[]>>;
-  args: DatabaseDev.ValueProxy.ProxyOrVal[];
+  args: DatabaseDev.ValueProxyOrValue<any>[];
 };
 export function unlockrequest<T extends {}, K extends keyof T>(
   table: Constructible<T>,
-  object: DatabaseDev.ValueProxy.Proxy<T>,
+  object: DatabaseDev.ValueProxy<T>,
   field: K,
   modifiers: ModifierWithProxyArgs[],
-): DatabaseDev.ValueProxy.Proxy<T[K]> {
+): DatabaseDev.ValueProxy<T[K]> {
   const args = modifiers.reduce(
     (a, { modifier, args }) => Object.assign(a, { [modifier.name]: args }),
     {} as Record<string, any[]>,
   );
 
-  const meta = (<any>object)('_internal')('meta');
+  const meta = (<any>object).key('_internal').key('meta');
   const metaTable = getMetadata(table, ModifiersStaticMetadata);
   return (
     metaTable.fields[<string>field]?.reduce(
@@ -427,11 +427,11 @@ export function unlockrequest<T extends {}, K extends keyof T>(
         if (isWriteOnly(modifier)) {
           return data;
         }
-        data = (<TwoWayModifier<any, any[]>>modifier).unlockrequest(data, meta(id), ...args[id]);
+        data = (<TwoWayModifier<any, any[]>>modifier).unlockrequest(data, meta.key(id), ...args[id]);
         return data;
       },
-      (<any>object)('_internal')('data')(field),
-    ) || (<any>object)(field)
+      (<any>object).key('_internal').key('data').key(field),
+    ) || (<any>object).key(field)
   );
 }
 

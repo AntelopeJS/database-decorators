@@ -38,7 +38,10 @@
     "exportsPath": "dist/interfaces",
     "imports": [
       "core@beta",
-      "database@beta",
+      {
+        "name": "database@beta",
+        "git": "git@github.com:AntelopeJS/interfaces-private.git"
+      },
       "api@beta"
     ],
     "importsOptional": [],

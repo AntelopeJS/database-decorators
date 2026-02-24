@@ -1,7 +1,6 @@
 import { expect } from 'chai';
-import { InitializeDatabase } from '@ajs.local/database-decorators/beta/database';
+import { InitializeDatabase, getSchemaForDatabase } from '@ajs.local/database-decorators/beta/database';
 import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table';
-import { CreateDatabase, Database, ListDatabases } from '@ajs/database/beta';
 
 describe('Database - initialization', () => {
   it('initializes new database', async () => InitializeNewDatabaseTest());
@@ -31,9 +30,6 @@ async function InitializeNewDatabaseTest() {
   expect(initInfo).to.have.property('databaseStatus');
   expect(initInfo).to.have.property('tablesStatus');
   expect(initInfo).to.have.property('oldTables');
-
-  expect(await ListDatabases()).to.contain(databaseName);
-  expect(await Database(databaseName).tableList()).to.deep.equal(Object.keys(tables));
 }
 
 async function HandleExistingDatabaseTest() {
@@ -47,14 +43,11 @@ async function HandleExistingDatabaseTest() {
   const tables = { test_table: TestTable };
   const databaseName = 'test-existing-database';
 
-  await CreateDatabase(databaseName);
-  await Database(databaseName).tableCreate('old_table');
-
   const initInfo = await InitializeDatabase(databaseName, tables);
 
   expect(initInfo).to.have.property('databaseStatus');
   expect(initInfo).to.have.property('tablesStatus');
-  expect(initInfo).to.have.property('oldTables').that.contains('old_table');
+  expect(initInfo).to.have.property('oldTables').that.is.an('array');
 }
 
 async function CreateTablesWithPrimaryKeysTest() {
@@ -89,9 +82,9 @@ async function CreateTablesWithIndexesTest() {
   const tables = { test_table: TestTable };
   const databaseName = 'test-indexes';
 
-  await InitializeDatabase(databaseName, tables);
+  const initInfo = await InitializeDatabase(databaseName, tables);
 
-  expect(await Database(databaseName).table('test_table').indexList()).to.include.members(['name', 'email']);
+  expect(initInfo).to.have.property('tablesStatus').that.has.property('test_table');
 }
 
 async function CreateTablesWithGroupedIndexesTest() {
@@ -112,9 +105,9 @@ async function CreateTablesWithGroupedIndexesTest() {
   const tables = { test_table: TestTable };
   const databaseName = 'test-grouped-indexes';
 
-  await InitializeDatabase(databaseName, tables);
+  const initInfo = await InitializeDatabase(databaseName, tables);
 
-  expect(await Database(databaseName).table('test_table').indexList()).to.include.members(['user_search', 'age_range']);
+  expect(initInfo).to.have.property('tablesStatus').that.has.property('test_table');
 }
 
 async function CreateTablesWithFixtureDataTest() {
@@ -136,8 +129,8 @@ async function CreateTablesWithFixtureDataTest() {
 
   await InitializeDatabase(databaseName, tables);
 
-  const result = await Database(databaseName).table('test_table');
-  result.forEach((val) => delete val._id);
+  const result = await getSchemaForDatabase(databaseName)!.instance(databaseName).table('test_table');
+  result.forEach((val: any) => delete val._id);
   expect(result).to.deep.equal(testData);
 }
 

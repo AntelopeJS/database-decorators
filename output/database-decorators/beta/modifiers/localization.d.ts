@@ -15,7 +15,7 @@ type Options = {
  */
 export declare class LocalizationModifier extends ContainerModifier<{}, Options> {
     unlock(locked_value: Record<string, unknown>, key: string): unknown;
-    unlockrequest(data: DatabaseDev.ValueProxy.Proxy<Record<string, unknown>>, meta: DatabaseDev.ValueProxy.Proxy<{}>, key: DatabaseDev.ValueProxy.ProxyOrVal<string>): DatabaseDev.ValueProxy.Proxy<unknown>;
+    unlockrequest(data: DatabaseDev.ValueProxy<Record<string, unknown>>, meta: DatabaseDev.ValueProxy<{}>, key: DatabaseDev.ValueProxyOrValue<string>): DatabaseDev.ValueProxy<unknown>;
     [MixinSymbol]: {
         new (): {
             /**

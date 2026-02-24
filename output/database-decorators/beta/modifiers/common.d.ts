@@ -13,18 +13,18 @@ export declare class OneWayModifier<LockedType, Args extends any[] = [], Meta ex
     test(locked_value: LockedType, value: unknown, ...args: Args): boolean;
 }
 type ProxyOrValArray<T extends any[]> = {
-    [K in keyof T]: DatabaseDev.ValueProxy.ProxyOrVal<T[K]>;
+    [K in keyof T]: DatabaseDev.ValueProxyOrValue<T[K]>;
 };
 export declare class TwoWayModifier<LockedType, Args extends any[] = [], Meta extends {} = {}, Options extends {} = {}> extends OneWayModifier<LockedType, Args, Meta, Options> {
     unlock(_locked_value: LockedType, ..._args: Args): unknown;
-    unlockrequest(_data: DatabaseDev.ValueProxy.Proxy<LockedType>, _meta: DatabaseDev.ValueProxy.Proxy<Meta>, ..._args: ProxyOrValArray<Args>): DatabaseDev.ValueProxy.Proxy<unknown>;
+    unlockrequest(_data: DatabaseDev.ValueProxy<LockedType>, _meta: DatabaseDev.ValueProxy<Meta>, ..._args: ProxyOrValArray<Args>): DatabaseDev.ValueProxy<unknown>;
 }
 export declare class ContainerModifier<Meta extends {} = {}, Options extends {} = {}> extends TwoWayModifier<Record<string, unknown>, [
     key: string
 ], Meta, Options> {
     lock(locked_value: Record<string, unknown> | undefined, value: unknown, key: string): Record<string, unknown>;
     unlock(locked_value: Record<string, unknown>, key: string): unknown;
-    unlockrequest(data: DatabaseDev.ValueProxy.Proxy<Record<string, unknown>>, meta: DatabaseDev.ValueProxy.Proxy<Meta>, key: DatabaseDev.ValueProxy.ProxyOrVal<string>): DatabaseDev.ValueProxy.Proxy<unknown>;
+    unlockrequest(data: DatabaseDev.ValueProxy<Record<string, unknown>>, meta: DatabaseDev.ValueProxy<Meta>, key: DatabaseDev.ValueProxyOrValue<string>): DatabaseDev.ValueProxy<unknown>;
 }
 interface InternalType {
     meta: Record<string, object>;
@@ -72,9 +72,9 @@ export declare function unlock<T extends {
 }, M extends Constructible<Modifier>>(object: T, Modifier: M, fields: Array<keyof T> | undefined, ...args: ExtractModifierArgs<InstanceType<M>>): void;
 type ModifierWithProxyArgs = {
     modifier: Constructible<TwoWayModifier<any, any[]>>;
-    args: DatabaseDev.ValueProxy.ProxyOrVal[];
+    args: DatabaseDev.ValueProxyOrValue<any>[];
 };
-export declare function unlockrequest<T extends {}, K extends keyof T>(table: Constructible<T>, object: DatabaseDev.ValueProxy.Proxy<T>, field: K, modifiers: ModifierWithProxyArgs[]): DatabaseDev.ValueProxy.Proxy<T[K]>;
+export declare function unlockrequest<T extends {}, K extends keyof T>(table: Constructible<T>, object: DatabaseDev.ValueProxy<T>, field: K, modifiers: ModifierWithProxyArgs[]): DatabaseDev.ValueProxy<T[K]>;
 export declare function lock<T extends {
     constructor: any;
 }, M extends Constructible<Modifier>>(object: T, Modifier: M, fields: Array<keyof T> | undefined, ...args: ExtractModifierArgs<InstanceType<M>> | []): void;

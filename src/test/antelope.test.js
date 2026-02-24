@@ -2,7 +2,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server-core');
 
 let mongod;
 
-module.exports.setup = async function() {
+module.exports.setup = async function () {
   mongod = await MongoMemoryServer.create();
 
   return {
@@ -18,7 +18,7 @@ module.exports.setup = async function() {
         source: {
           type: 'git',
           remote: 'https://github.com/AntelopeJS/mongodb.git',
-          branch: 'main',
+          branch: 'feat/aql2',
           installCommand: ['pnpm i', 'npx tsc'],
         },
         config: {
@@ -45,6 +45,6 @@ module.exports.setup = async function() {
   };
 };
 
-module.exports.cleanup = async function() {
+module.exports.cleanup = async function () {
   await mongod.stop();
 };

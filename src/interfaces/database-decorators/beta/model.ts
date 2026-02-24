@@ -3,12 +3,12 @@ import { fromDatabase, fromPlainData, toDatabase, triggerEvent } from './modifie
 import assert from 'assert';
 import { Constructible, DatumStaticMetadata, DeepPartial, getMetadata } from './common';
 import { Class, MakeParameterAndPropertyDecorator } from '@ajs/core/beta/decorators';
-import { Database } from '@ajs/database/beta';
 import { RequestContext, SetParameterProvider } from '@ajs/api/beta';
+import { getSchemaForDatabase } from './database';
 
 export type DataModel<T = any> = {
-  new (database: DatabaseDev.Database): {
-    readonly database: DatabaseDev.Database;
+  new (database: DatabaseDev.SchemaInstance<any>): {
+    readonly database: DatabaseDev.SchemaInstance<any>;
     readonly table: DatabaseDev.Table<T>;
   };
   fromDatabase(obj: any): T | undefined;
@@ -60,8 +60,8 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
      */
     public readonly table: DatabaseDev.Table<T>;
 
-    constructor(public readonly database: DatabaseDev.Database<{ [K in Name]: T }>) {
-      this.table = database.table<undefined>(tableName);
+    constructor(public readonly database: DatabaseDev.SchemaInstance<{ [K in Name]: T }>) {
+      this.table = database.table(tableName);
     }
 
     /**
@@ -82,7 +82,9 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
      * @returns Array of Table class instances.
      */
     public getBy(index: keyof T, ...keys: any[]) {
-      return this.table.getAll(<string>index, ...keys).then((dataR) => dataR.map(Model.fromDatabase) as T[]);
+      return this.table
+        .getAll(keys.length === 1 ? keys[0] : keys, <string>index)
+        .then((dataR) => dataR.map(Model.fromDatabase) as T[]);
     }
 
     /**
@@ -101,13 +103,13 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
      * @param options Insert options
      * @returns Insert result
      */
-    public insert(obj: DeepPartial<T> | Array<DeepPartial<T>>, options?: DatabaseDev.Options.Insert) {
+    public insert(obj: DeepPartial<T> | Array<DeepPartial<T>>) {
       const converter = (entry: any) => {
         const instance = Model.fromPlainData(entry);
         triggerEvent(instance, 'insert');
         return Model.toDatabase(instance);
       };
-      return this.table.insert(Array.isArray(obj) ? obj.map(converter) : converter(obj), options).run();
+      return this.table.insert(Array.isArray(obj) ? obj.map(converter) : converter(obj)).run();
     }
 
     /**
@@ -118,39 +120,19 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
      * @param options Update options
      * @returns Update result
      */
-    public update(
-      id: string,
-      obj: DeepPartial<T>,
-      options?: DatabaseDev.Options.Update,
-    ): Promise<DatabaseDev.Result.Write<T>>;
-
-    /**
-     * Updates a single element in the table.
-     * This variant extracts the primary key value from the object.
-     *
-     * @param obj Table class instance or plain data
-     * @param options Update options
-     * @returns Update result
-     */
-    public update(obj: DeepPartial<T>, options?: DatabaseDev.Options.Update): Promise<DatabaseDev.Result.Write<T>>;
-    public update(
-      obj: DeepPartial<T> | string,
-      options: DatabaseDev.Options.Update | undefined | DeepPartial<T>,
-      options2?: DatabaseDev.Options.Update,
-    ) {
+    public update(id: string, obj: DeepPartial<T>): Promise<number>;
+    public update(obj: DeepPartial<T>): Promise<number>;
+    public update(obj: DeepPartial<T> | string, data?: DeepPartial<T>) {
       if (typeof obj === 'string') {
-        const instance = Model.fromPlainData(<DeepPartial<T>>options);
+        const instance = Model.fromPlainData(<DeepPartial<T>>data);
         triggerEvent(instance, 'update');
-        return this.table.get(obj).update(Model.toDatabase(instance), options2).run();
+        return this.table.get(obj).update(Model.toDatabase(instance)).run();
       }
       const instance = Model.fromPlainData(obj);
       triggerEvent(instance, 'update');
       const id = (<any>obj)[primaryKey];
       assert(id !== undefined, 'Missing primary key in object update.');
-      return this.table
-        .get(id)
-        .update(Model.toDatabase(instance), <DatabaseDev.Options.Update>options)
-        .run();
+      return this.table.get(id).update(Model.toDatabase(instance)).run();
     }
 
     /**
@@ -173,8 +155,9 @@ export function GetModel<M extends InstanceType<DataModel>>(cl: Class<M>, databa
   }
   const cache = modelCache.get(cl)!;
   if (cache[databaseName]) return cache[databaseName] as M;
-  const database = Database(databaseName);
-  const model = new cl(database);
+  const schema = getSchemaForDatabase(databaseName);
+  assert(schema, `Schema not found for database '${databaseName}'`);
+  const model = new cl(schema.instance(databaseName));
   cache[databaseName] = model;
   return model;
 }
