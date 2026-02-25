@@ -1,6 +1,6 @@
 import { BasicDataModel, Index, Table, RegisterTable } from '@ajs/database-decorators/beta';
 
-@RegisterTable('users')
+@RegisterTable('users', 'app')
 class User extends Table {
   @Index({ primary: true })
   declare _id: string;
@@ -12,4 +12,4 @@ class User extends Table {
   declare lastName: string;
 }
 
-export class UserModel extends BasicDataModel(User, 'database-decorators-playground') {}
+export class UserModel extends BasicDataModel(User, 'database-decorators-playground') { }

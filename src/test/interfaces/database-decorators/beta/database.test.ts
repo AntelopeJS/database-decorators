@@ -1,20 +1,21 @@
 import { expect } from 'chai';
-import { InitializeDatabase, getSchemaForDatabase } from '@ajs.local/database-decorators/beta/database';
+import { CreateDatabaseSchemaInstance, getSchemaForInstance } from '@ajs.local/database-decorators/beta/database';
+import { RegisterTable } from '@ajs.local/database-decorators/beta/schema';
 import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table';
 
 describe('Database - initialization', () => {
-  it('initializes new database', async () => InitializeNewDatabaseTest());
-  it('handles existing database', async () => HandleExistingDatabaseTest());
+  it('creates a schema instance', async () => CreateSchemaInstanceTest());
   it('creates tables with primary keys', async () => CreateTablesWithPrimaryKeysTest());
   it('creates tables with indexes', async () => CreateTablesWithIndexesTest());
   it('creates tables with grouped indexes', async () => CreateTablesWithGroupedIndexesTest());
   it('creates tables with fixture data', async () => CreateTablesWithFixtureDataTest());
   it('handles multiple tables', async () => HandleMultipleTablesTest());
-  it('returns correct status information', async () => ReturnCorrectStatusInformationTest());
-  it('handles empty table list', async () => HandleEmptyTableListTest());
+  it('creates multiple instances for same schema', async () => CreateMultipleInstancesTest());
+  it('inserts fixtures for each instance', async () => InsertFixturesForEachInstanceTest());
 });
 
-async function InitializeNewDatabaseTest() {
+async function CreateSchemaInstanceTest() {
+  @RegisterTable('test_table', 'test-new-schema')
   class TestTable extends Table {
     @Index({ primary: true })
     declare id: string;
@@ -22,53 +23,30 @@ async function InitializeNewDatabaseTest() {
     declare name: string;
   }
 
-  const tables = { test_table: TestTable };
-  const databaseName = 'test-new-database';
+  await CreateDatabaseSchemaInstance('test-new-schema', 'test-new-instance');
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
-
-  expect(initInfo).to.have.property('databaseStatus');
-  expect(initInfo).to.have.property('tablesStatus');
-  expect(initInfo).to.have.property('oldTables');
-}
-
-async function HandleExistingDatabaseTest() {
-  class TestTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
-    declare name: string;
-  }
-
-  const tables = { test_table: TestTable };
-  const databaseName = 'test-existing-database';
-
-  const initInfo = await InitializeDatabase(databaseName, tables);
-
-  expect(initInfo).to.have.property('databaseStatus');
-  expect(initInfo).to.have.property('tablesStatus');
-  expect(initInfo).to.have.property('oldTables').that.is.an('array');
+  const schema = getSchemaForInstance('test-new-instance');
+  expect(schema).to.not.equal(undefined);
 }
 
 async function CreateTablesWithPrimaryKeysTest() {
-  class TestTable extends Table {
+  @RegisterTable('pk_table', 'test-pk-schema')
+  class _TestTable extends Table {
     @Index({ primary: true })
     declare id: string;
 
     declare name: string;
   }
 
-  const tables = { test_table: TestTable };
-  const databaseName = 'test-primary-keys';
+  await CreateDatabaseSchemaInstance('test-pk-schema', 'test-pk-instance');
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
-
-  expect(initInfo).to.have.property('tablesStatus');
-  expect(initInfo).to.have.property('tablesStatus').that.has.property('test_table');
+  const schema = getSchemaForInstance('test-pk-instance');
+  expect(schema).to.not.equal(undefined);
 }
 
 async function CreateTablesWithIndexesTest() {
-  class TestTable extends Table {
+  @RegisterTable('idx_table', 'test-idx-schema')
+  class _TestTable extends Table {
     @Index({ primary: true })
     declare id: string;
 
@@ -79,16 +57,15 @@ async function CreateTablesWithIndexesTest() {
     declare email: string;
   }
 
-  const tables = { test_table: TestTable };
-  const databaseName = 'test-indexes';
+  await CreateDatabaseSchemaInstance('test-idx-schema', 'test-idx-instance');
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
-
-  expect(initInfo).to.have.property('tablesStatus').that.has.property('test_table');
+  const schema = getSchemaForInstance('test-idx-instance');
+  expect(schema).to.not.equal(undefined);
 }
 
 async function CreateTablesWithGroupedIndexesTest() {
-  class TestTable extends Table {
+  @RegisterTable('grp_table', 'test-grp-schema')
+  class _TestTable extends Table {
     @Index({ primary: true })
     declare id: string;
 
@@ -102,12 +79,10 @@ async function CreateTablesWithGroupedIndexesTest() {
     declare age: number;
   }
 
-  const tables = { test_table: TestTable };
-  const databaseName = 'test-grouped-indexes';
+  await CreateDatabaseSchemaInstance('test-grp-schema', 'test-grp-instance');
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
-
-  expect(initInfo).to.have.property('tablesStatus').that.has.property('test_table');
+  const schema = getSchemaForInstance('test-grp-instance');
+  expect(schema).to.not.equal(undefined);
 }
 
 async function CreateTablesWithFixtureDataTest() {
@@ -117,25 +92,25 @@ async function CreateTablesWithFixtureDataTest() {
   ];
 
   @Fixture(() => testData)
-  class TestTable extends Table {
+  @RegisterTable('fixture_table', 'test-fixture-schema')
+  class _TestTable extends Table {
     @Index({ primary: true })
     declare id: string;
 
     declare name: string;
   }
 
-  const tables = { test_table: TestTable };
-  const databaseName = 'test-fixture-data';
+  await CreateDatabaseSchemaInstance('test-fixture-schema', 'test-fixture-instance');
 
-  await InitializeDatabase(databaseName, tables);
-
-  const result = await getSchemaForDatabase(databaseName)!.instance(databaseName).table('test_table');
+  const schema = getSchemaForInstance('test-fixture-instance')!;
+  const result = await schema.instance('test-fixture-instance').table('fixture_table');
   result.forEach((val: any) => delete val._id);
   expect(result).to.deep.equal(testData);
 }
 
 async function HandleMultipleTablesTest() {
-  class UserTable extends Table {
+  @RegisterTable('users', 'test-multi-table-schema')
+  class _UserTable extends Table {
     @Index({ primary: true })
     declare id: string;
 
@@ -145,7 +120,8 @@ async function HandleMultipleTablesTest() {
     declare name: string;
   }
 
-  class ProductTable extends Table {
+  @RegisterTable('products', 'test-multi-table-schema')
+  class _ProductTable extends Table {
     @Index({ primary: true })
     declare id: string;
 
@@ -155,42 +131,61 @@ async function HandleMultipleTablesTest() {
     declare price: number;
   }
 
-  const tables = {
-    users: UserTable,
-    products: ProductTable,
-  };
-  const databaseName = 'test-multiple-tables';
+  await CreateDatabaseSchemaInstance('test-multi-table-schema', 'test-multi-table-instance');
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
-
-  expect(initInfo).to.have.property('tablesStatus').that.contains.keys('users', 'products');
+  const schema = getSchemaForInstance('test-multi-table-instance');
+  expect(schema).to.not.equal(undefined);
 }
 
-async function ReturnCorrectStatusInformationTest() {
-  class TestTable extends Table {
+async function CreateMultipleInstancesTest() {
+  @RegisterTable('tenant_table', 'test-multi-instance-schema')
+  class _TenantTable extends Table {
     @Index({ primary: true })
     declare id: string;
 
     declare name: string;
   }
 
-  const tables = { test_table: TestTable };
-  const databaseName = 'test-status-info';
+  await CreateDatabaseSchemaInstance('test-multi-instance-schema', 'tenant-1');
+  await CreateDatabaseSchemaInstance('test-multi-instance-schema', 'tenant-2');
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
+  const schema1 = getSchemaForInstance('tenant-1');
+  const schema2 = getSchemaForInstance('tenant-2');
+  expect(schema1).to.not.equal(undefined);
+  expect(schema2).to.not.equal(undefined);
+  expect(schema1).to.equal(schema2);
 
-  expect(initInfo).to.have.property('databaseStatus').that.is.oneOf(['created', 'unchanged']);
-  expect(initInfo).to.have.property('tablesStatus').that.is.an('object');
-  expect(initInfo).to.have.property('oldTables').that.is.an('array');
+  const instance1 = schema1!.instance('tenant-1');
+  const instance2 = schema2!.instance('tenant-2');
+  expect(instance1).to.not.equal(undefined);
+  expect(instance2).to.not.equal(undefined);
 }
 
-async function HandleEmptyTableListTest() {
-  const tables = {};
-  const databaseName = 'test-empty-tables';
+async function InsertFixturesForEachInstanceTest() {
+  const testData = [
+    { id: '1', name: 'Fixture 1' },
+    { id: '2', name: 'Fixture 2' },
+  ];
 
-  const initInfo = await InitializeDatabase(databaseName, tables);
+  @Fixture(() => testData)
+  @RegisterTable('fixture_multi', 'test-fixture-multi-schema')
+  class _FixtureTable extends Table {
+    @Index({ primary: true })
+    declare id: string;
 
-  expect(initInfo).to.have.property('databaseStatus');
-  expect(initInfo).to.have.property('tablesStatus').that.deep.equals({});
-  expect(initInfo).to.have.property('oldTables').that.is.an('array');
+    declare name: string;
+  }
+
+  await CreateDatabaseSchemaInstance('test-fixture-multi-schema', 'fixture-inst-1');
+  await CreateDatabaseSchemaInstance('test-fixture-multi-schema', 'fixture-inst-2');
+
+  const schema = getSchemaForInstance('fixture-inst-1')!;
+
+  const result1 = await schema.instance('fixture-inst-1').table('fixture_multi');
+  result1.forEach((val: any) => delete val._id);
+  expect(result1).to.deep.equal(testData);
+
+  const result2 = await schema.instance('fixture-inst-2').table('fixture_multi');
+  result2.forEach((val: any) => delete val._id);
+  expect(result2).to.deep.equal(testData);
 }

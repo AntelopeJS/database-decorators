@@ -16,13 +16,13 @@ export type DataModel<T = any> = {
  * @param dataType Database Table class
  * @param tableName Table name in Database
  */
-export declare function BasicDataModel<T extends {}, Name extends string>(dataType: Constructible<T>, tableName: Name): {
-    new (database: DatabaseDev.SchemaInstance<{ [K in Name]: T; }>): {
+export declare function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableName?: string): {
+    new (database: DatabaseDev.SchemaInstance<any>): {
         /**
          * AQL Table reference.
          */
         readonly table: DatabaseDev.Table<T>;
-        readonly database: DatabaseDev.SchemaInstance<{ [K in Name]: T; }>;
+        readonly database: DatabaseDev.SchemaInstance<any>;
         /**
          * Get a single element from the table using its primary key.
          *
@@ -92,11 +92,11 @@ export declare function BasicDataModel<T extends {}, Name extends string>(dataTy
      */
     toDatabase(obj: any): Record<string, any>;
 };
-export declare function GetModel<M extends InstanceType<DataModel>>(cl: Class<M>, databaseName: string): M;
+export declare function GetModel<M extends InstanceType<DataModel>>(cl: Class<M>, instanceId: string): M;
 export declare const StaticModel: (cl: Class<{
     readonly database: DatabaseDev.SchemaInstance<any>;
     readonly table: DatabaseDev.Table<any>;
-}>, databaseName: string) => import("@ajs/core/beta/decorators").PropertyDecorator & import("@ajs/core/beta/decorators").ParameterDecorator;
+}>, instanceId: string) => import("@ajs/core/beta/decorators").PropertyDecorator & import("@ajs/core/beta/decorators").ParameterDecorator;
 export declare const DynamicModel: (cl: Class<{
     readonly database: DatabaseDev.SchemaInstance<any>;
     readonly table: DatabaseDev.Table<any>;

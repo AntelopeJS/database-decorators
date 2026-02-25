@@ -12,6 +12,8 @@ export interface MetadataClass<TMetadata> extends Constructible<TMetadata> {
  */
 export declare class DatumStaticMetadata {
     static key: symbol;
+    tableName?: string;
+    schemaName?: string;
     readonly indexes: Record<string, Array<string>>;
     primary: string;
     generator?: DatumGenerator;

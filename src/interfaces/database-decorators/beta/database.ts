@@ -5,33 +5,42 @@ import { Table } from './table';
 import { DatumStaticMetadata, getMetadata } from './common';
 import { fromPlainData, toDatabase, triggerEvent } from './modifiers/common';
 import type { DatumGeneratorOutput } from './common';
-
-export type Status = 'created' | 'unchanged';
-
-export interface InitInfo {
-  databaseStatus: Status;
-  tablesStatus: Record<string, Status>;
-  oldTables: string[];
-}
+import { getTablesForSchema } from './schema';
+import assert from 'assert';
 
 type TableDefinitions = Record<string, Class<Table>>;
 type TableEntry = Record<string, unknown>;
 
-const CreatedStatus: Status = 'created';
-
 const schemaStore = new Map<string, Schema<any>>();
+const instanceSchemaMap = new Map<string, string>();
 
-export function getSchemaForDatabase(databaseName: string): Schema<any> | undefined {
-  return schemaStore.get(databaseName);
+export function getSchemaForInstance(instanceId: string): Schema<any> | undefined {
+  const schemaId = instanceSchemaMap.get(instanceId);
+  if (!schemaId) return undefined;
+  return schemaStore.get(schemaId);
 }
 
-export async function InitializeDatabase(databaseName: string, tables: TableDefinitions): Promise<InitInfo> {
+function getOrCreateSchema(schemaId: string): Schema<any> {
+  const existing = schemaStore.get(schemaId);
+  if (existing) return existing;
+
+  const tables = getTablesForSchema(schemaId);
+  assert(tables, `No tables registered for schema '${schemaId}'`);
+
   const definition = buildSchemaDefinition(tables);
-  const schema = new Schema(databaseName, definition);
-  schemaStore.set(databaseName, schema);
-  await schema.createInstance(databaseName);
-  await insertAllFixtureData(schema, databaseName, tables);
-  return buildInitInfo(tables);
+  const schema = new Schema(schemaId, definition);
+  schemaStore.set(schemaId, schema);
+  return schema;
+}
+
+export async function CreateDatabaseSchemaInstance(schemaId: string, instanceId: string): Promise<void> {
+  const schema = getOrCreateSchema(schemaId);
+  await schema.createInstance(instanceId);
+  instanceSchemaMap.set(instanceId, schemaId);
+
+  const tables = getTablesForSchema(schemaId);
+  assert(tables, `No tables registered for schema '${schemaId}'`);
+  await insertAllFixtureData(schema, instanceId, tables);
 }
 
 function buildSchemaDefinition(tables: TableDefinitions): SchemaDefinition {
@@ -49,22 +58,18 @@ function buildSchemaDefinition(tables: TableDefinitions): SchemaDefinition {
   return definition;
 }
 
-async function insertAllFixtureData(
-  schema: Schema<any>,
-  databaseName: string,
-  tables: TableDefinitions,
-): Promise<void> {
+async function insertAllFixtureData(schema: Schema<any>, instanceId: string, tables: TableDefinitions): Promise<void> {
   await Promise.all(
     Object.entries(tables).map(([tableName, tableClass]) => {
       const metadata = getMetadata(tableClass, DatumStaticMetadata);
-      return insertFixtureData(schema, databaseName, tableName, tableClass, metadata.generator);
+      return insertFixtureData(schema, instanceId, tableName, tableClass, metadata.generator);
     }),
   );
 }
 
 async function insertFixtureData(
   schema: Schema<any>,
-  databaseName: string,
+  instanceId: string,
   tableName: string,
   tableClass: Class<Table>,
   generator: DatumStaticMetadata['generator'],
@@ -78,7 +83,7 @@ async function insertFixtureData(
     return;
   }
   const payload: any = rows.length === 1 ? rows[0] : rows;
-  await schema.instance(databaseName).table(tableName).insert(payload);
+  await schema.instance(instanceId).table(tableName).insert(payload);
 }
 
 function toFixtureRows(fixtureData: DatumGeneratorOutput, tableClass: Class<Table>): TableEntry[] {
@@ -92,12 +97,4 @@ function toFixtureRows(fixtureData: DatumGeneratorOutput, tableClass: Class<Tabl
 
 function isTableEntry(value: unknown): value is TableEntry {
   return typeof value === 'object' && value !== null;
-}
-
-function buildInitInfo(tables: TableDefinitions): InitInfo {
-  const tablesStatus: Record<string, Status> = {};
-  for (const tableName of Object.keys(tables)) {
-    tablesStatus[tableName] = CreatedStatus;
-  }
-  return { databaseStatus: CreatedStatus, tablesStatus, oldTables: [] };
 }

@@ -4,7 +4,7 @@ import assert from 'assert';
 import { Constructible, DatumStaticMetadata, DeepPartial, getMetadata } from './common';
 import { Class, MakeParameterAndPropertyDecorator } from '@ajs/core/beta/decorators';
 import { RequestContext, SetParameterProvider } from '@ajs/api/beta';
-import { getSchemaForDatabase } from './database';
+import { getSchemaForInstance } from './database';
 
 export type DataModel<T = any> = {
   new (database: DatabaseDev.SchemaInstance<any>): {
@@ -21,8 +21,12 @@ export type DataModel<T = any> = {
  * @param dataType Database Table class
  * @param tableName Table name in Database
  */
-export function BasicDataModel<T extends {}, Name extends string>(dataType: Constructible<T>, tableName: Name) {
-  const primaryKey = getMetadata(dataType, DatumStaticMetadata).primary;
+export function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableName?: string) {
+  const metadata = getMetadata(dataType, DatumStaticMetadata);
+  const resolvedName = tableName ?? metadata.tableName;
+  assert(resolvedName, 'tableName must be provided or set via @RegisterTable');
+  const name: string = resolvedName;
+  const primaryKey = metadata.primary;
   return class Model {
     /**
      * Converts some plain data into an instance of the Table class.
@@ -60,8 +64,8 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
      */
     public readonly table: DatabaseDev.Table<T>;
 
-    constructor(public readonly database: DatabaseDev.SchemaInstance<{ [K in Name]: T }>) {
-      this.table = database.table(tableName);
+    constructor(public readonly database: DatabaseDev.SchemaInstance<any>) {
+      this.table = database.table(name);
     }
 
     /**
@@ -149,22 +153,22 @@ export function BasicDataModel<T extends {}, Name extends string>(dataType: Cons
 
 const modelCache = new Map<Class, Record<string, InstanceType<DataModel>>>();
 
-export function GetModel<M extends InstanceType<DataModel>>(cl: Class<M>, databaseName: string) {
+export function GetModel<M extends InstanceType<DataModel>>(cl: Class<M>, instanceId: string) {
   if (!modelCache.has(cl)) {
     modelCache.set(cl, {});
   }
   const cache = modelCache.get(cl)!;
-  if (cache[databaseName]) return cache[databaseName] as M;
-  const schema = getSchemaForDatabase(databaseName);
-  assert(schema, `Schema not found for database '${databaseName}'`);
-  const model = new cl(schema.instance(databaseName));
-  cache[databaseName] = model;
+  if (cache[instanceId]) return cache[instanceId] as M;
+  const schema = getSchemaForInstance(instanceId);
+  assert(schema, `Schema not found for instance '${instanceId}'`);
+  const model = new cl(schema.instance(instanceId));
+  cache[instanceId] = model;
   return model;
 }
 
 export const StaticModel = MakeParameterAndPropertyDecorator(
-  (target, key, index, cl: Class<InstanceType<DataModel>>, databaseName: string) => {
-    SetParameterProvider(target, key, index, () => GetModel(cl, databaseName));
+  (target, key, index, cl: Class<InstanceType<DataModel>>, instanceId: string) => {
+    SetParameterProvider(target, key, index, () => GetModel(cl, instanceId));
   },
 );
 
