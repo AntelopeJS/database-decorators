@@ -11,30 +11,23 @@ import assert from 'assert';
 type TableDefinitions = Record<string, Class<Table>>;
 type TableEntry = Record<string, unknown>;
 
-const schemaStore = new Map<string, Schema<any>>();
 const instanceSchemaMap = new Map<string, string>();
 
 export function getSchemaForInstance(instanceId: string): Schema<any> | undefined {
   const schemaId = instanceSchemaMap.get(instanceId);
   if (!schemaId) return undefined;
-  return schemaStore.get(schemaId);
-}
-
-function getOrCreateSchema(schemaId: string): Schema<any> {
-  const existing = schemaStore.get(schemaId);
-  if (existing) return existing;
-
-  const tables = getTablesForSchema(schemaId);
-  assert(tables, `No tables registered for schema '${schemaId}'`);
-
-  const definition = buildSchemaDefinition(tables);
-  const schema = new Schema(schemaId, definition);
-  schemaStore.set(schemaId, schema);
-  return schema;
+  return Schema.get(schemaId);
 }
 
 export async function CreateDatabaseSchemaInstance(schemaId: string, instanceId: string): Promise<void> {
-  const schema = getOrCreateSchema(schemaId);
+  let schema = Schema.get(schemaId);
+  if (!schema) {
+    const tables = getTablesForSchema(schemaId);
+    assert(tables, `No tables registered for schema '${schemaId}'`);
+    const definition = buildSchemaDefinition(tables);
+    schema = new Schema(schemaId, definition);
+  }
+
   await schema.createInstance(instanceId);
   instanceSchemaMap.set(instanceId, schemaId);
 
