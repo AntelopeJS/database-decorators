@@ -12,18 +12,13 @@ type TableDefinitions = Record<string, Class<Table>>;
 type TableEntry = Record<string, unknown>;
 
 export async function CreateDatabaseSchemaInstance(schemaId: string, instanceId: string): Promise<void> {
-  let schema = Schema.get(schemaId);
-  if (!schema) {
-    const tables = getTablesForSchema(schemaId);
-    assert(tables, `No tables registered for schema '${schemaId}'`);
-    const definition = buildSchemaDefinition(tables);
-    schema = new Schema(schemaId, definition);
-  }
-
-  await schema.createInstance(instanceId);
-
   const tables = getTablesForSchema(schemaId);
   assert(tables, `No tables registered for schema '${schemaId}'`);
+
+  const definition = buildSchemaDefinition(tables);
+  const schema = new Schema(schemaId, definition);
+  await schema.createInstance(instanceId);
+
   await insertAllFixtureData(schema, instanceId, tables);
 }
 
