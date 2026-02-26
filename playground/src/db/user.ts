@@ -12,4 +12,4 @@ class User extends Table {
   declare lastName: string;
 }
 
-export class UserModel extends BasicDataModel(User, 'database-decorators-playground') { }
+export class UserModel extends BasicDataModel(User, 'database-decorators-playground') {}

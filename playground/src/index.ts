@@ -38,13 +38,12 @@ export class PlaygroundController extends Controller('/playground') {
   }
 }
 
-export function construct(): void { }
+export function construct(): void {}
 
-export function destroy(): void { }
+export function destroy(): void {}
 
 export async function start(): Promise<void> {
   await CreateDatabaseSchemaInstance('app', 'default');
 }
 
-export function stop(): void { }
-
+export function stop(): void {}

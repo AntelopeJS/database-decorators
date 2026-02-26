@@ -1,12 +1,13 @@
 import * as DatabaseDev from '@ajs/database/beta';
+import { Schema } from '@ajs/database/beta';
 import { fromDatabase, fromPlainData, toDatabase, triggerEvent } from './modifiers/common';
 import assert from 'assert';
 import { Constructible, DatumStaticMetadata, DeepPartial, getMetadata } from './common';
 import { Class, MakeParameterAndPropertyDecorator } from '@ajs/core/beta/decorators';
 import { RequestContext, SetParameterProvider } from '@ajs/api/beta';
-import { getSchemaForInstance } from './database';
 
 export type DataModel<T = any> = {
+  readonly schemaName: string;
   new (database: DatabaseDev.SchemaInstance<any>): {
     readonly database: DatabaseDev.SchemaInstance<any>;
     readonly table: DatabaseDev.Table<T>;
@@ -26,8 +27,10 @@ export function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableNa
   const resolvedName = tableName ?? metadata.tableName;
   assert(resolvedName, 'tableName must be provided or set via @RegisterTable');
   const name: string = resolvedName;
+  const schemaName = metadata.schemaName;
   const primaryKey = metadata.primary;
   return class Model {
+    public static readonly schemaName = schemaName!;
     /**
      * Converts some plain data into an instance of the Table class.
      *
@@ -153,27 +156,27 @@ export function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableNa
 
 const modelCache = new Map<Class, Record<string, InstanceType<DataModel>>>();
 
-export function GetModel<M extends InstanceType<DataModel>>(cl: Class<M>, instanceId: string) {
+export function GetModel<M extends InstanceType<DataModel>>(cl: DataModel & Class<M>, instanceId: string) {
   if (!modelCache.has(cl)) {
     modelCache.set(cl, {});
   }
   const cache = modelCache.get(cl)!;
   if (cache[instanceId]) return cache[instanceId] as M;
-  const schema = getSchemaForInstance(instanceId);
-  assert(schema, `Schema not found for instance '${instanceId}'`);
+  const schema = Schema.get(cl.schemaName);
+  assert(schema, `Schema not found for '${cl.schemaName}'`);
   const model = new cl(schema.instance(instanceId));
   cache[instanceId] = model;
   return model;
 }
 
 export const StaticModel = MakeParameterAndPropertyDecorator(
-  (target, key, index, cl: Class<InstanceType<DataModel>>, instanceId: string) => {
+  (target, key, index, cl: DataModel & Class<InstanceType<DataModel>>, instanceId: string) => {
     SetParameterProvider(target, key, index, () => GetModel(cl, instanceId));
   },
 );
 
 export const DynamicModel = MakeParameterAndPropertyDecorator(
-  (target, key, index, cl: Class<InstanceType<DataModel>>, callback: (ctx: RequestContext) => string) => {
+  (target, key, index, cl: DataModel & Class<InstanceType<DataModel>>, callback: (ctx: RequestContext) => string) => {
     SetParameterProvider(target, key, index, (ctx: RequestContext) => {
       return GetModel(cl, callback(ctx));
     });

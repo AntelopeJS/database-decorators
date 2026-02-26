@@ -1,15 +1,15 @@
 import { expect } from 'chai';
-import { getSchemaForInstance } from '@ajs.local/database-decorators/beta/database';
 import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table';
 import { BasicDataModel } from '@ajs.local/database-decorators/beta/model';
 import { CreateDatabaseSchemaInstance } from '@ajs.local/database-decorators/beta/database';
+import { Schema } from '@ajs/database/beta';
 import { RegisterTable } from '@ajs.local/database-decorators/beta/schema';
 import { Encrypted, EncryptionModifier } from '@ajs.local/database-decorators/beta/modifiers/encryption';
 import { Hashed, HashModifier } from '@ajs.local/database-decorators/beta/modifiers/hash';
 import { Localized, LocalizationModifier } from '@ajs.local/database-decorators/beta/modifiers/localization';
 
-function getDatabase(name: string) {
-  return getSchemaForInstance(name)!.instance(name);
+function getDatabase(schemaId: string, instanceId: string) {
+  return Schema.get(schemaId)!.instance(instanceId);
 }
 
 describe('Integration - real database operations', () => {
@@ -46,7 +46,7 @@ async function CreateAndQueryUserWithModifiersTest() {
   const UserModel = BasicDataModel(User, 'users');
 
   await CreateDatabaseSchemaInstance('integration-modifiers-schema', 'test-integration-db');
-  const schemaInstance = getDatabase('test-integration-db');
+  const schemaInstance = getDatabase('integration-modifiers-schema', 'test-integration-db');
   const userModel = new UserModel(schemaInstance);
 
   const userData = {
@@ -106,7 +106,7 @@ async function PerformCrudOperationsOnProductsTest() {
   const ProductModel = BasicDataModel(Product, 'products');
 
   await CreateDatabaseSchemaInstance('integration-crud-schema', 'test-crud-db');
-  const schemaInstance = getDatabase('test-crud-db');
+  const schemaInstance = getDatabase('integration-crud-schema', 'test-crud-db');
   const productModel = new ProductModel(schemaInstance);
 
   const productData = {
@@ -155,7 +155,7 @@ async function HandleLocalizedContentTest() {
   const ContentModel = BasicDataModel(LocalizedContent, 'localized_content');
 
   await CreateDatabaseSchemaInstance('integration-l10n-schema', 'test-localization-db');
-  const schemaInstance = getDatabase('test-localization-db');
+  const schemaInstance = getDatabase('integration-l10n-schema', 'test-localization-db');
   const contentModel = new ContentModel(schemaInstance);
 
   const content = new LocalizedContent();
@@ -208,7 +208,7 @@ async function ManageEncryptedSensitiveDataTest() {
   const SensitiveDataModel = BasicDataModel(SensitiveData, 'sensitive_data');
 
   await CreateDatabaseSchemaInstance('integration-encrypt-schema', 'test-encryption-db');
-  const schemaInstance = getDatabase('test-encryption-db');
+  const schemaInstance = getDatabase('integration-encrypt-schema', 'test-encryption-db');
   const sensitiveDataModel = new SensitiveDataModel(schemaInstance);
 
   const sensitiveData = {
@@ -253,7 +253,7 @@ async function ValidateHashedPasswordsTest() {
   const UserAccountModel = BasicDataModel(UserAccount, 'user_accounts');
 
   await CreateDatabaseSchemaInstance('integration-hash-schema', 'test-hash-db');
-  const schemaInstance = getDatabase('test-hash-db');
+  const schemaInstance = getDatabase('integration-hash-schema', 'test-hash-db');
   const userAccountModel = new UserAccountModel(schemaInstance);
 
   const accountData = {
@@ -303,7 +303,7 @@ async function WorkWithSchemaRegistrationTest() {
 
   await CreateDatabaseSchemaInstance('integration-schema-reg', 'test-schema-integration-db');
 
-  const schemaInstance = getDatabase('test-schema-integration-db');
+  const schemaInstance = getDatabase('integration-schema-reg', 'test-schema-integration-db');
   const UserModel = BasicDataModel(SchemaUser, 'schema_users');
   const ProductModel = BasicDataModel(SchemaProduct, 'schema_products');
 
@@ -361,7 +361,7 @@ async function HandleComplexRelationshipsTest() {
   const OrderItemModel = BasicDataModel(OrderItem, 'order_items');
 
   await CreateDatabaseSchemaInstance('integration-rel-schema', 'test-relationships-db');
-  const schemaInstance = getDatabase('test-relationships-db');
+  const schemaInstance = getDatabase('integration-rel-schema', 'test-relationships-db');
 
   const orderModel = new OrderModel(schemaInstance);
   const orderItemModel = new OrderItemModel(schemaInstance);
@@ -409,7 +409,7 @@ async function PerformBulkOperationsTest() {
   const BulkProductModel = BasicDataModel(BulkProduct, 'bulk_products');
 
   await CreateDatabaseSchemaInstance('integration-bulk-schema', 'test-bulk-db');
-  const schemaInstance = getDatabase('test-bulk-db');
+  const schemaInstance = getDatabase('integration-bulk-schema', 'test-bulk-db');
   const bulkProductModel = new BulkProductModel(schemaInstance);
 
   const bulkData = [
@@ -454,7 +454,7 @@ async function ManageDatabaseInitializationTest() {
 
   await CreateDatabaseSchemaInstance('integration-fixture-schema', 'test-fixture-db');
 
-  const schemaInstance = getDatabase('test-fixture-db');
+  const schemaInstance = getDatabase('integration-fixture-schema', 'test-fixture-db');
   const FixtureUserModel = BasicDataModel(FixtureUser, 'fixture_users');
   const fixtureUserModel = new FixtureUserModel(schemaInstance);
 

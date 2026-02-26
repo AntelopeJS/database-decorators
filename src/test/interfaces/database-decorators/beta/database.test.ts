@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { CreateDatabaseSchemaInstance, getSchemaForInstance } from '@ajs.local/database-decorators/beta/database';
+import { CreateDatabaseSchemaInstance } from '@ajs.local/database-decorators/beta/database';
+import { Schema } from '@ajs/database/beta';
 import { RegisterTable } from '@ajs.local/database-decorators/beta/schema';
 import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table';
 
@@ -16,7 +17,7 @@ describe('Database - initialization', () => {
 
 async function CreateSchemaInstanceTest() {
   @RegisterTable('test_table', 'test-new-schema')
-  class TestTable extends Table {
+  class _TestTable extends Table {
     @Index({ primary: true })
     declare id: string;
 
@@ -25,7 +26,7 @@ async function CreateSchemaInstanceTest() {
 
   await CreateDatabaseSchemaInstance('test-new-schema', 'test-new-instance');
 
-  const schema = getSchemaForInstance('test-new-instance');
+  const schema = Schema.get('test-new-schema');
   expect(schema).to.not.equal(undefined);
 }
 
@@ -40,7 +41,7 @@ async function CreateTablesWithPrimaryKeysTest() {
 
   await CreateDatabaseSchemaInstance('test-pk-schema', 'test-pk-instance');
 
-  const schema = getSchemaForInstance('test-pk-instance');
+  const schema = Schema.get('test-pk-schema');
   expect(schema).to.not.equal(undefined);
 }
 
@@ -59,7 +60,7 @@ async function CreateTablesWithIndexesTest() {
 
   await CreateDatabaseSchemaInstance('test-idx-schema', 'test-idx-instance');
 
-  const schema = getSchemaForInstance('test-idx-instance');
+  const schema = Schema.get('test-idx-schema');
   expect(schema).to.not.equal(undefined);
 }
 
@@ -81,7 +82,7 @@ async function CreateTablesWithGroupedIndexesTest() {
 
   await CreateDatabaseSchemaInstance('test-grp-schema', 'test-grp-instance');
 
-  const schema = getSchemaForInstance('test-grp-instance');
+  const schema = Schema.get('test-grp-schema');
   expect(schema).to.not.equal(undefined);
 }
 
@@ -102,10 +103,11 @@ async function CreateTablesWithFixtureDataTest() {
 
   await CreateDatabaseSchemaInstance('test-fixture-schema', 'test-fixture-instance');
 
-  const schema = getSchemaForInstance('test-fixture-instance')!;
+  const schema = Schema.get('test-fixture-schema')!;
   const result = await schema.instance('test-fixture-instance').table('fixture_table');
   result.forEach((val: any) => delete val._id);
-  expect(result).to.deep.equal(testData);
+  const sortById = (a: any, b: any) => a.id.localeCompare(b.id);
+  expect(result.sort(sortById)).to.deep.equal(testData.sort(sortById));
 }
 
 async function HandleMultipleTablesTest() {
@@ -133,7 +135,7 @@ async function HandleMultipleTablesTest() {
 
   await CreateDatabaseSchemaInstance('test-multi-table-schema', 'test-multi-table-instance');
 
-  const schema = getSchemaForInstance('test-multi-table-instance');
+  const schema = Schema.get('test-multi-table-schema');
   expect(schema).to.not.equal(undefined);
 }
 
@@ -149,8 +151,8 @@ async function CreateMultipleInstancesTest() {
   await CreateDatabaseSchemaInstance('test-multi-instance-schema', 'tenant-1');
   await CreateDatabaseSchemaInstance('test-multi-instance-schema', 'tenant-2');
 
-  const schema1 = getSchemaForInstance('tenant-1');
-  const schema2 = getSchemaForInstance('tenant-2');
+  const schema1 = Schema.get('test-multi-instance-schema');
+  const schema2 = Schema.get('test-multi-instance-schema');
   expect(schema1).to.not.equal(undefined);
   expect(schema2).to.not.equal(undefined);
   expect(schema1).to.equal(schema2);
@@ -179,13 +181,14 @@ async function InsertFixturesForEachInstanceTest() {
   await CreateDatabaseSchemaInstance('test-fixture-multi-schema', 'fixture-inst-1');
   await CreateDatabaseSchemaInstance('test-fixture-multi-schema', 'fixture-inst-2');
 
-  const schema = getSchemaForInstance('fixture-inst-1')!;
+  const schema = Schema.get('test-fixture-multi-schema')!;
+  const sortById = (a: any, b: any) => a.id.localeCompare(b.id);
 
   const result1 = await schema.instance('fixture-inst-1').table('fixture_multi');
   result1.forEach((val: any) => delete val._id);
-  expect(result1).to.deep.equal(testData);
+  expect(result1.sort(sortById)).to.deep.equal(testData.sort(sortById));
 
   const result2 = await schema.instance('fixture-inst-2').table('fixture_multi');
   result2.forEach((val: any) => delete val._id);
-  expect(result2).to.deep.equal(testData);
+  expect(result2.sort(sortById)).to.deep.equal(testData.sort(sortById));
 }

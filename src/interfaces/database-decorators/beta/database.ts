@@ -11,14 +11,6 @@ import assert from 'assert';
 type TableDefinitions = Record<string, Class<Table>>;
 type TableEntry = Record<string, unknown>;
 
-const instanceSchemaMap = new Map<string, string>();
-
-export function getSchemaForInstance(instanceId: string): Schema<any> | undefined {
-  const schemaId = instanceSchemaMap.get(instanceId);
-  if (!schemaId) return undefined;
-  return Schema.get(schemaId);
-}
-
 export async function CreateDatabaseSchemaInstance(schemaId: string, instanceId: string): Promise<void> {
   let schema = Schema.get(schemaId);
   if (!schema) {
@@ -29,7 +21,6 @@ export async function CreateDatabaseSchemaInstance(schemaId: string, instanceId:
   }
 
   await schema.createInstance(instanceId);
-  instanceSchemaMap.set(instanceId, schemaId);
 
   const tables = getTablesForSchema(schemaId);
   assert(tables, `No tables registered for schema '${schemaId}'`);
