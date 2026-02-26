@@ -3,6 +3,7 @@ import { Constructible, DeepPartial } from './common';
 import { Class } from '@ajs/core/beta/decorators';
 import { RequestContext } from '@ajs/api/beta';
 export type DataModel<T = any> = {
+    readonly schemaName: string;
     new (database: DatabaseDev.SchemaInstance<any>): {
         readonly database: DatabaseDev.SchemaInstance<any>;
         readonly table: DatabaseDev.Table<T>;
@@ -70,6 +71,7 @@ export declare function BasicDataModel<T extends {}>(dataType: Constructible<T>,
          */
         delete(id: string): Promise<number>;
     };
+    readonly schemaName: string;
     /**
      * Converts some plain data into an instance of the Table class.
      *
@@ -92,12 +94,12 @@ export declare function BasicDataModel<T extends {}>(dataType: Constructible<T>,
      */
     toDatabase(obj: any): Record<string, any>;
 };
-export declare function GetModel<M extends InstanceType<DataModel>>(cl: Class<M>, instanceId: string): M;
-export declare const StaticModel: (cl: Class<{
+export declare function GetModel<M extends InstanceType<DataModel>>(cl: DataModel & Class<M>, instanceId: string): M;
+export declare const StaticModel: (cl: DataModel<any> & Class<{
     readonly database: DatabaseDev.SchemaInstance<any>;
     readonly table: DatabaseDev.Table<any>;
 }>, instanceId: string) => import("@ajs/core/beta/decorators").PropertyDecorator & import("@ajs/core/beta/decorators").ParameterDecorator;
-export declare const DynamicModel: (cl: Class<{
+export declare const DynamicModel: (cl: DataModel<any> & Class<{
     readonly database: DatabaseDev.SchemaInstance<any>;
     readonly table: DatabaseDev.Table<any>;
 }>, callback: (ctx: RequestContext) => string) => import("@ajs/core/beta/decorators").PropertyDecorator & import("@ajs/core/beta/decorators").ParameterDecorator;
