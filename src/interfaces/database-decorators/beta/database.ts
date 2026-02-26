@@ -61,6 +61,10 @@ async function insertFixtureData(
   if (!generator) {
     return;
   }
+  const count = await schema.instance(instanceId).table(tableName).count();
+  if (count > 0) {
+    return;
+  }
   const fixtureData = await generator(tableClass);
   const rows = toFixtureRows(fixtureData, tableClass);
   if (rows.length === 0) {
