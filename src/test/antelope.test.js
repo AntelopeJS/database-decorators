@@ -18,7 +18,7 @@ module.exports.setup = async function () {
         source: {
           type: 'git',
           remote: 'https://github.com/AntelopeJS/mongodb.git',
-          branch: 'feat/aql2',
+          branch: 'main',
           installCommand: ['pnpm i', 'npx tsc'],
         },
         config: {

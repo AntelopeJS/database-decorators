@@ -177,7 +177,13 @@ export const StaticModel = MakeParameterAndPropertyDecorator(
 );
 
 export const DynamicModel = MakeParameterAndPropertyDecorator(
-  (target, key, index, cl: DataModel & Class<InstanceType<DataModel>>, callback: (ctx: RequestContext) => string | undefined) => {
+  (
+    target,
+    key,
+    index,
+    cl: DataModel & Class<InstanceType<DataModel>>,
+    callback: (ctx: RequestContext) => string | undefined,
+  ) => {
     SetParameterProvider(target, key, index, (ctx: RequestContext) => {
       return GetModel(cl, callback(ctx));
     });

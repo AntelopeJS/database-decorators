@@ -11,7 +11,11 @@ import assert from 'assert';
 type TableDefinitions = Record<string, Class<Table>>;
 type TableEntry = Record<string, unknown>;
 
-export async function CreateDatabaseSchemaInstance(schemaId: string, instanceId?: string, options?: SchemaOptions): Promise<void> {
+export async function CreateDatabaseSchemaInstance(
+  schemaId: string,
+  instanceId?: string,
+  options?: SchemaOptions,
+): Promise<void> {
   const tables = getTablesForSchema(schemaId);
   assert(tables, `No tables registered for schema '${schemaId}'`);
 
@@ -37,7 +41,11 @@ function buildSchemaDefinition(tables: TableDefinitions): SchemaDefinition {
   return definition;
 }
 
-async function insertAllFixtureData(schema: Schema<any>, instanceId: string | undefined, tables: TableDefinitions): Promise<void> {
+async function insertAllFixtureData(
+  schema: Schema<any>,
+  instanceId: string | undefined,
+  tables: TableDefinitions,
+): Promise<void> {
   await Promise.all(
     Object.entries(tables).map(([tableName, tableClass]) => {
       const metadata = getMetadata(tableClass, DatumStaticMetadata);
