@@ -1,4 +1,4 @@
-import { Schema, type SchemaDefinition } from '@ajs/database/beta';
+import { Schema, type SchemaDefinition, type SchemaOptions } from '@ajs/database/beta';
 import type { IndexDefinition } from '@ajs/database/beta/schema';
 import { Class } from '@ajs/core/beta/decorators';
 import { Table } from './table';
@@ -11,12 +11,12 @@ import assert from 'assert';
 type TableDefinitions = Record<string, Class<Table>>;
 type TableEntry = Record<string, unknown>;
 
-export async function CreateDatabaseSchemaInstance(schemaId: string, instanceId: string): Promise<void> {
+export async function CreateDatabaseSchemaInstance(schemaId: string, instanceId?: string, options?: SchemaOptions): Promise<void> {
   const tables = getTablesForSchema(schemaId);
   assert(tables, `No tables registered for schema '${schemaId}'`);
 
   const definition = buildSchemaDefinition(tables);
-  const schema = new Schema(schemaId, definition);
+  const schema = new Schema(schemaId, definition, options);
   await schema.createInstance(instanceId);
 
   await insertAllFixtureData(schema, instanceId, tables);
@@ -37,7 +37,7 @@ function buildSchemaDefinition(tables: TableDefinitions): SchemaDefinition {
   return definition;
 }
 
-async function insertAllFixtureData(schema: Schema<any>, instanceId: string, tables: TableDefinitions): Promise<void> {
+async function insertAllFixtureData(schema: Schema<any>, instanceId: string | undefined, tables: TableDefinitions): Promise<void> {
   await Promise.all(
     Object.entries(tables).map(([tableName, tableClass]) => {
       const metadata = getMetadata(tableClass, DatumStaticMetadata);
@@ -48,7 +48,7 @@ async function insertAllFixtureData(schema: Schema<any>, instanceId: string, tab
 
 async function insertFixtureData(
   schema: Schema<any>,
-  instanceId: string,
+  instanceId: string | undefined,
   tableName: string,
   tableClass: Class<Table>,
   generator: DatumStaticMetadata['generator'],

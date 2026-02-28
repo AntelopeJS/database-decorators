@@ -156,27 +156,28 @@ export function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableNa
 
 const modelCache = new Map<Class, Record<string, InstanceType<DataModel>>>();
 
-export function GetModel<M extends InstanceType<DataModel>>(cl: DataModel & Class<M>, instanceId: string) {
+export function GetModel<M extends InstanceType<DataModel>>(cl: DataModel & Class<M>, instanceId?: string) {
   if (!modelCache.has(cl)) {
     modelCache.set(cl, {});
   }
   const cache = modelCache.get(cl)!;
-  if (cache[instanceId]) return cache[instanceId] as M;
+  const cacheKey = instanceId ?? '';
+  if (cache[cacheKey]) return cache[cacheKey] as M;
   const schema = Schema.get(cl.schemaName);
   assert(schema, `Schema not found for '${cl.schemaName}'`);
   const model = new cl(schema.instance(instanceId));
-  cache[instanceId] = model;
+  cache[cacheKey] = model;
   return model;
 }
 
 export const StaticModel = MakeParameterAndPropertyDecorator(
-  (target, key, index, cl: DataModel & Class<InstanceType<DataModel>>, instanceId: string) => {
+  (target, key, index, cl: DataModel & Class<InstanceType<DataModel>>, instanceId?: string) => {
     SetParameterProvider(target, key, index, () => GetModel(cl, instanceId));
   },
 );
 
 export const DynamicModel = MakeParameterAndPropertyDecorator(
-  (target, key, index, cl: DataModel & Class<InstanceType<DataModel>>, callback: (ctx: RequestContext) => string) => {
+  (target, key, index, cl: DataModel & Class<InstanceType<DataModel>>, callback: (ctx: RequestContext) => string | undefined) => {
     SetParameterProvider(target, key, index, (ctx: RequestContext) => {
       return GetModel(cl, callback(ctx));
     });
