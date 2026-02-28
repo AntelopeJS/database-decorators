@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Put, Delete, RawBody, Parameter } from '@ajs/api/beta';
-import { StaticModel } from '@ajs/database-decorators/beta';
+import { StaticModel, CreateDatabaseSchemaInstance } from '@ajs/database-decorators/beta';
 import { UserModel } from './db/user';
 
 export class PlaygroundController extends Controller('/playground') {
-  @StaticModel(UserModel, 'database-decorators-playground')
+  @StaticModel(UserModel, 'default')
   declare userModel: UserModel;
 
   @Get('/users')
@@ -42,6 +42,8 @@ export function construct(): void {}
 
 export function destroy(): void {}
 
-export async function start(): Promise<void> {}
+export async function start(): Promise<void> {
+  await CreateDatabaseSchemaInstance('app', 'default');
+}
 
 export function stop(): void {}

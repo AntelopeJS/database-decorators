@@ -1,26 +1,18 @@
 import { expect } from 'chai';
-import {
-  RegisterTable,
-  GetTablesFromSchema,
-  InitializeDatabaseFromSchema,
-  DEFAULT_SCHEMA,
-} from '@ajs.local/database-decorators/beta/schema';
+import { RegisterTable, getTablesForSchema } from '@ajs.local/database-decorators/beta/schema';
 import { Table, Index } from '@ajs.local/database-decorators/beta/table';
+import { DatumStaticMetadata, getMetadata } from '@ajs.local/database-decorators/beta/common';
 
-describe('Schema - database schemas', () => {
-  it('registers table in default schema', async () => RegisterTableInDefaultSchemaTest());
-  it('registers table in custom schema', async () => RegisterTableInCustomSchemaTest());
-  it('registers multiple tables in schema', async () => RegisterMultipleTablesInSchemaTest());
-  it('gets tables from default schema', async () => GetTablesFromDefaultSchemaTest());
-  it('gets tables from custom schema', async () => GetTablesFromCustomSchemaTest());
-  it('returns undefined for non-existent schema', async () => ReturnUndefinedForNonExistentSchemaTest());
-  it('initializes database from default schema', async () => InitializeDatabaseFromDefaultSchemaTest());
-  it('initializes database from custom schema', async () => InitializeDatabaseFromCustomSchemaTest());
-  it('handles empty schema', async () => HandleEmptySchemaTest());
+describe('Schema - RegisterTable decorator', () => {
+  it('stores tableName and schemaName in metadata', async () => StoreTableNameAndSchemaNameInMetadataTest());
+  it('stores tableName for multiple classes', async () => StoreTableNameForMultipleClassesTest());
+  it('preserves existing metadata', async () => PreserveExistingMetadataTest());
+  it('registers tables in schema registry', async () => RegisterTablesInSchemaRegistryTest());
+  it('returns undefined for unknown schema', async () => ReturnUndefinedForUnknownSchemaTest());
 });
 
-async function RegisterTableInDefaultSchemaTest() {
-  @RegisterTable('test_table')
+async function StoreTableNameAndSchemaNameInMetadataTest() {
+  @RegisterTable('test_table', 'test-schema')
   class TestTable extends Table {
     @Index({ primary: true })
     id!: string;
@@ -28,29 +20,13 @@ async function RegisterTableInDefaultSchemaTest() {
     name!: string;
   }
 
-  const tables = GetTablesFromSchema(String(DEFAULT_SCHEMA));
-
-  expect(tables).to.have.property('test_table');
-  expect(tables?.test_table).to.equal(TestTable);
+  const metadata = getMetadata(TestTable, DatumStaticMetadata);
+  expect(metadata.tableName).to.equal('test_table');
+  expect(metadata.schemaName).to.equal('test-schema');
 }
 
-async function RegisterTableInCustomSchemaTest() {
-  @RegisterTable('test_table', 'custom_schema')
-  class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
-    name!: string;
-  }
-
-  const tables = GetTablesFromSchema('custom_schema');
-
-  expect(tables).to.have.property('test_table');
-  expect(tables?.test_table).to.equal(TestTable);
-}
-
-async function RegisterMultipleTablesInSchemaTest() {
-  @RegisterTable('user_table', 'multi_schema')
+async function StoreTableNameForMultipleClassesTest() {
+  @RegisterTable('user_table', 'multi-schema')
   class UserTable extends Table {
     @Index({ primary: true })
     id!: string;
@@ -61,7 +37,7 @@ async function RegisterMultipleTablesInSchemaTest() {
     name!: string;
   }
 
-  @RegisterTable('product_table', 'multi_schema')
+  @RegisterTable('product_table', 'multi-schema')
   class ProductTable extends Table {
     @Index({ primary: true })
     id!: string;
@@ -72,95 +48,54 @@ async function RegisterMultipleTablesInSchemaTest() {
     price!: number;
   }
 
-  const tables = GetTablesFromSchema('multi_schema');
+  const userMetadata = getMetadata(UserTable, DatumStaticMetadata);
+  const productMetadata = getMetadata(ProductTable, DatumStaticMetadata);
 
-  expect(tables).to.have.property('user_table');
-  expect(tables).to.have.property('product_table');
-  expect(tables?.user_table).to.equal(UserTable);
-  expect(tables?.product_table).to.equal(ProductTable);
+  expect(userMetadata.tableName).to.equal('user_table');
+  expect(userMetadata.schemaName).to.equal('multi-schema');
+  expect(productMetadata.tableName).to.equal('product_table');
+  expect(productMetadata.schemaName).to.equal('multi-schema');
 }
 
-async function GetTablesFromDefaultSchemaTest() {
-  @RegisterTable('default_table')
-  class DefaultTable extends Table {
+async function PreserveExistingMetadataTest() {
+  @RegisterTable('indexed_table', 'preserve-schema')
+  class IndexedTable extends Table {
     @Index({ primary: true })
     id!: string;
+
+    @Index()
+    email!: string;
 
     name!: string;
   }
 
-  const tables = GetTablesFromSchema(String(DEFAULT_SCHEMA));
-
-  expect(tables).to.have.property('default_table');
-  expect(tables?.default_table).to.equal(DefaultTable);
+  const metadata = getMetadata(IndexedTable, DatumStaticMetadata);
+  expect(metadata.tableName).to.equal('indexed_table');
+  expect(metadata.schemaName).to.equal('preserve-schema');
+  expect(metadata.primary).to.equal('id');
+  expect(metadata.indexes).to.have.property('email');
 }
 
-async function GetTablesFromCustomSchemaTest() {
-  @RegisterTable('custom_table', 'test_schema')
-  class CustomTable extends Table {
+async function RegisterTablesInSchemaRegistryTest() {
+  @RegisterTable('reg_users', 'registry-schema')
+  class _RegUser extends Table {
     @Index({ primary: true })
     id!: string;
-
-    name!: string;
   }
 
-  const tables = GetTablesFromSchema('test_schema');
+  @RegisterTable('reg_products', 'registry-schema')
+  class _RegProduct extends Table {
+    @Index({ primary: true })
+    id!: string;
+  }
 
-  expect(tables).to.have.property('custom_table');
-  expect(tables?.custom_table).to.equal(CustomTable);
+  const tables = getTablesForSchema('registry-schema');
+  expect(tables).to.not.equal(undefined);
+  expect(tables).to.have.property('reg_users');
+  expect(tables).to.have.property('reg_products');
 }
 
-async function ReturnUndefinedForNonExistentSchemaTest() {
-  const tables = GetTablesFromSchema('non_existent_schema');
-
+async function ReturnUndefinedForUnknownSchemaTest() {
+  const tables = getTablesForSchema('nonexistent-schema');
   expect(tables).to.equal(undefined);
-}
-
-async function InitializeDatabaseFromDefaultSchemaTest() {
-  @RegisterTable('schema_table')
-  class _SchemaTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
-    name!: string;
-  }
-
-  const databaseName = 'test-schema-db';
-  const initInfo = await InitializeDatabaseFromSchema(databaseName);
-
-  expect(initInfo).to.have.property('databaseStatus');
-  expect(initInfo).to.have.property('tablesStatus');
-  expect(initInfo).to.have.property('oldTables');
-}
-
-async function InitializeDatabaseFromCustomSchemaTest() {
-  @RegisterTable('custom_schema_table', 'custom_schema')
-  class _CustomSchemaTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
-    name!: string;
-  }
-
-  const databaseName = 'test-custom-schema-db';
-  const schemaName = 'custom_schema';
-  const initInfo = await InitializeDatabaseFromSchema(databaseName, schemaName);
-
-  expect(initInfo).to.have.property('databaseStatus');
-  expect(initInfo).to.have.property('tablesStatus');
-  expect(initInfo).to.have.property('oldTables');
-}
-
-async function HandleEmptySchemaTest() {
-  const databaseName = 'test-empty-schema-db';
-  const schemaName = 'empty_schema';
-
-  const initInfo = await InitializeDatabaseFromSchema(databaseName, schemaName);
-  expect(initInfo).to.have.property('databaseStatus');
-  expect(initInfo).to.have.property('tablesStatus').that.deep.equals({});
-  expect(initInfo).to.have.property('oldTables').that.is.an('array');
-
-  expect(initInfo.databaseStatus).to.equal('created');
-  expect(initInfo.tablesStatus).to.deep.equal({});
-  expect(initInfo.oldTables).to.deep.equal([]);
 }

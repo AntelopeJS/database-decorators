@@ -1,24 +1,21 @@
 import { MakeClassDecorator, ClassDecorator, Class } from '@ajs/core/beta/decorators';
 import { Table } from './table';
-import { InitializeDatabase } from './database';
+import { DatumStaticMetadata, getMetadata } from './common';
 
-export const DEFAULT_SCHEMA = Symbol('default');
-export type DatabaseSchema = Record<string, Class<Table>>;
+const schemaTableRegistry: Record<string, Record<string, Class<Table>>> = {};
 
-const databasesSchema: Record<string | symbol, DatabaseSchema> = {};
+export const RegisterTable: (tableName: string, schemaName: string) => ClassDecorator<typeof Table> =
+  MakeClassDecorator((target, tableName: string, schemaName: string) => {
+    const metadata = getMetadata(target, DatumStaticMetadata);
+    metadata.tableName = tableName;
+    metadata.schemaName = schemaName;
 
-export const RegisterTable: (tableName: string, schemaName?: string) => ClassDecorator<typeof Table> =
-  MakeClassDecorator((target, tableName: string, schemaName?: string) => {
-    const database = schemaName || String(DEFAULT_SCHEMA);
-    databasesSchema[database] = databasesSchema[database] || {};
-    databasesSchema[database][tableName] = target;
+    if (!(schemaName in schemaTableRegistry)) {
+      schemaTableRegistry[schemaName] = {};
+    }
+    schemaTableRegistry[schemaName][tableName] = target as unknown as Class<Table>;
   });
 
-export const GetTablesFromSchema = (schemaName: string) => {
-  return databasesSchema[schemaName];
-};
-
-export function InitializeDatabaseFromSchema(databaseName: string, schemaName?: string) {
-  const tables = GetTablesFromSchema(schemaName || String(DEFAULT_SCHEMA));
-  return InitializeDatabase(databaseName, tables || {});
+export function getTablesForSchema(schemaName: string): Record<string, Class<Table>> | undefined {
+  return schemaTableRegistry[schemaName];
 }

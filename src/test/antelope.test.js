@@ -2,7 +2,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server-core');
 
 let mongod;
 
-module.exports.setup = async function() {
+module.exports.setup = async function () {
   mongod = await MongoMemoryServer.create();
 
   return {
@@ -45,6 +45,6 @@ module.exports.setup = async function() {
   };
 };
 
-module.exports.cleanup = async function() {
+module.exports.cleanup = async function () {
   await mongod.stop();
 };

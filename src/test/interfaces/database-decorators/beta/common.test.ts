@@ -7,6 +7,7 @@ describe('Common - metadata', () => {
   it('creates new metadata when not exists', async () => CreateNewMetadataWhenNotExistsTest());
   it('retrieves existing metadata', async () => RetrieveExistingMetadataTest());
   it('handles deep partial types correctly', async () => HandleDeepPartialTypesCorrectlyTest());
+  it('has schemaName undefined by default', async () => SchemaNameUndefinedByDefaultTest());
 });
 
 async function CreateMetadataWithDefaultValuesTest() {
@@ -60,4 +61,9 @@ async function HandleDeepPartialTypesCorrectlyTest() {
     },
     hobbies: ['reading'],
   };
+}
+
+async function SchemaNameUndefinedByDefaultTest() {
+  const metadata = new DatumStaticMetadata();
+  expect(metadata.schemaName).to.equal(undefined);
 }

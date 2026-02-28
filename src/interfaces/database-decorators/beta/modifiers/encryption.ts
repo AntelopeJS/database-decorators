@@ -78,8 +78,8 @@ export class EncryptionModifier extends TwoWayModifier<LockedType, [], Meta, Opt
     ) as unknown;
   }
 
-  public override unlockrequest(data: DatabaseDev.ValueProxy.Proxy<LockedType>): DatabaseDev.ValueProxy.Proxy<unknown> {
-    return data;
+  public override unlockrequest(data: DatabaseDev.ValueProxy<LockedType>): DatabaseDev.ValueProxy<unknown> {
+    return data as DatabaseDev.ValueProxy<unknown>;
   }
 
   [MixinSymbol] = class {};

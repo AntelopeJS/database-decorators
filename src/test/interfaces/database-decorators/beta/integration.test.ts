@@ -1,12 +1,16 @@
 import { expect } from 'chai';
-import { Database } from '@ajs/database/beta';
 import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table';
 import { BasicDataModel } from '@ajs.local/database-decorators/beta/model';
-import { InitializeDatabase } from '@ajs.local/database-decorators/beta/database';
-import { RegisterTable, InitializeDatabaseFromSchema } from '@ajs.local/database-decorators/beta/schema';
+import { CreateDatabaseSchemaInstance } from '@ajs.local/database-decorators/beta/database';
+import { Schema } from '@ajs/database/beta';
+import { RegisterTable } from '@ajs.local/database-decorators/beta/schema';
 import { Encrypted, EncryptionModifier } from '@ajs.local/database-decorators/beta/modifiers/encryption';
 import { Hashed, HashModifier } from '@ajs.local/database-decorators/beta/modifiers/hash';
 import { Localized, LocalizationModifier } from '@ajs.local/database-decorators/beta/modifiers/localization';
+
+function getDatabase(schemaId: string, instanceId: string) {
+  return Schema.get(schemaId)!.instance(instanceId);
+}
 
 describe('Integration - real database operations', () => {
   it('creates and queries user with modifiers', async () => CreateAndQueryUserWithModifiersTest());
@@ -21,7 +25,7 @@ describe('Integration - real database operations', () => {
 });
 
 async function CreateAndQueryUserWithModifiersTest() {
-  @RegisterTable('users')
+  @RegisterTable('users', 'integration-modifiers-schema')
   class User extends Table.with(HashModifier, EncryptionModifier) {
     @Index({ primary: true })
     declare id: string;
@@ -40,10 +44,10 @@ async function CreateAndQueryUserWithModifiersTest() {
   }
 
   const UserModel = BasicDataModel(User, 'users');
-  const database = Database('test-integration-db');
-  const userModel = new UserModel(database);
 
-  await InitializeDatabase('test-integration-db', { users: User });
+  await CreateDatabaseSchemaInstance('integration-modifiers-schema', 'test-integration-db');
+  const schemaInstance = getDatabase('integration-modifiers-schema', 'test-integration-db');
+  const userModel = new UserModel(schemaInstance);
 
   const userData = {
     email: 'test@example.com',
@@ -54,12 +58,11 @@ async function CreateAndQueryUserWithModifiersTest() {
   };
 
   const insertResult = await userModel.insert(userData);
-  expect(insertResult).to.have.property('generated_keys');
-  expect(insertResult.generated_keys).to.have.length(1);
+  expect(insertResult).to.have.length(1);
 
-  const userId = insertResult.generated_keys![0];
+  const userId = insertResult[0];
   const retrievedUserFromModel = await userModel.get(userId);
-  const retrievedUserFromDatabase = await database.table('users').get(userId).run();
+  const retrievedUserFromDatabase = await schemaInstance.table('users').get(userId).run();
 
   expect(retrievedUserFromModel).to.have.property('email').that.equals('test@example.com');
   expect(retrievedUserFromModel).to.have.property('name').that.equals('John Doe');
@@ -73,7 +76,7 @@ async function CreateAndQueryUserWithModifiersTest() {
     expect(isPasswordValid).to.equal(true);
   }
 
-  const dbUser = (await database.table('users').get(userId).run()) as {
+  const dbUser = (await schemaInstance.table('users').get(userId).run()) as {
     email: string;
     name: string;
     password: string;
@@ -84,7 +87,7 @@ async function CreateAndQueryUserWithModifiersTest() {
 }
 
 async function PerformCrudOperationsOnProductsTest() {
-  @RegisterTable('products')
+  @RegisterTable('products', 'integration-crud-schema')
   class Product extends Table {
     @Index({ primary: true })
     declare id: string;
@@ -101,10 +104,10 @@ async function PerformCrudOperationsOnProductsTest() {
   }
 
   const ProductModel = BasicDataModel(Product, 'products');
-  const database = Database('test-crud-db');
-  const productModel = new ProductModel(database);
 
-  await InitializeDatabase('test-crud-db', { products: Product });
+  await CreateDatabaseSchemaInstance('integration-crud-schema', 'test-crud-db');
+  const schemaInstance = getDatabase('integration-crud-schema', 'test-crud-db');
+  const productModel = new ProductModel(schemaInstance);
 
   const productData = {
     name: 'Test Product',
@@ -115,7 +118,7 @@ async function PerformCrudOperationsOnProductsTest() {
   };
 
   const insertResult = await productModel.insert(productData);
-  const productId = insertResult.generated_keys![0];
+  const productId = insertResult[0];
 
   const retrievedProduct = await productModel.get(productId);
   expect(retrievedProduct).to.have.property('name').that.equals('Test Product');
@@ -135,7 +138,7 @@ async function PerformCrudOperationsOnProductsTest() {
 }
 
 async function HandleLocalizedContentTest() {
-  @RegisterTable('localized_content')
+  @RegisterTable('localized_content', 'integration-l10n-schema')
   class LocalizedContent extends Table.with(LocalizationModifier) {
     @Index({ primary: true })
     declare id: string;
@@ -150,10 +153,10 @@ async function HandleLocalizedContentTest() {
   }
 
   const ContentModel = BasicDataModel(LocalizedContent, 'localized_content');
-  const database = Database('test-localization-db');
-  const contentModel = new ContentModel(database);
 
-  await InitializeDatabase('test-localization-db', { localized_content: LocalizedContent });
+  await CreateDatabaseSchemaInstance('integration-l10n-schema', 'test-localization-db');
+  const schemaInstance = getDatabase('integration-l10n-schema', 'test-localization-db');
+  const contentModel = new ContentModel(schemaInstance);
 
   const content = new LocalizedContent();
   content.id = 'content-123';
@@ -165,7 +168,7 @@ async function HandleLocalizedContentTest() {
   content.localize('fr').description = 'French Description';
 
   const insertResult = await contentModel.insert(content);
-  const contentId = insertResult.generated_keys![0];
+  const contentId = insertResult[0];
 
   const retrievedContent = await contentModel.get(contentId);
   expect(retrievedContent).to.have.property('title');
@@ -188,7 +191,7 @@ async function HandleLocalizedContentTest() {
 }
 
 async function ManageEncryptedSensitiveDataTest() {
-  @RegisterTable('sensitive_data')
+  @RegisterTable('sensitive_data', 'integration-encrypt-schema')
   class SensitiveData extends Table.with(EncryptionModifier) {
     @Index({ primary: true })
     declare id: string;
@@ -203,10 +206,10 @@ async function ManageEncryptedSensitiveDataTest() {
   }
 
   const SensitiveDataModel = BasicDataModel(SensitiveData, 'sensitive_data');
-  const database = Database('test-encryption-db');
-  const sensitiveDataModel = new SensitiveDataModel(database);
 
-  await InitializeDatabase('test-encryption-db', { sensitive_data: SensitiveData });
+  await CreateDatabaseSchemaInstance('integration-encrypt-schema', 'test-encryption-db');
+  const schemaInstance = getDatabase('integration-encrypt-schema', 'test-encryption-db');
+  const sensitiveDataModel = new SensitiveDataModel(schemaInstance);
 
   const sensitiveData = {
     creditCard: '4111-1111-1111-1111',
@@ -215,14 +218,14 @@ async function ManageEncryptedSensitiveDataTest() {
   };
 
   const insertResult = await sensitiveDataModel.insert(sensitiveData);
-  const dataId = insertResult.generated_keys![0];
+  const dataId = insertResult[0];
 
   const retrievedData = await sensitiveDataModel.get(dataId);
   expect(retrievedData).to.have.property('userId').that.equals('user123');
   expect(retrievedData?.creditCard).to.equal('4111-1111-1111-1111');
   expect(retrievedData?.ssn).to.equal('123-45-6789');
 
-  const dbData = (await database.table('sensitive_data').get(dataId).run()) as {
+  const dbData = (await schemaInstance.table('sensitive_data').get(dataId).run()) as {
     userId: string;
     creditCard: string;
     ssn: string;
@@ -233,7 +236,7 @@ async function ManageEncryptedSensitiveDataTest() {
 }
 
 async function ValidateHashedPasswordsTest() {
-  @RegisterTable('user_accounts')
+  @RegisterTable('user_accounts', 'integration-hash-schema')
   class UserAccount extends Table.with(HashModifier) {
     @Index({ primary: true })
     declare id: string;
@@ -248,10 +251,10 @@ async function ValidateHashedPasswordsTest() {
   }
 
   const UserAccountModel = BasicDataModel(UserAccount, 'user_accounts');
-  const database = Database('test-hash-db');
-  const userAccountModel = new UserAccountModel(database);
 
-  await InitializeDatabase('test-hash-db', { user_accounts: UserAccount });
+  await CreateDatabaseSchemaInstance('integration-hash-schema', 'test-hash-db');
+  const schemaInstance = getDatabase('integration-hash-schema', 'test-hash-db');
+  const userAccountModel = new UserAccountModel(schemaInstance);
 
   const accountData = {
     username: 'testuser',
@@ -260,7 +263,7 @@ async function ValidateHashedPasswordsTest() {
   };
 
   const insertResult = await userAccountModel.insert(accountData);
-  const accountId = insertResult.generated_keys![0];
+  const accountId = insertResult[0];
 
   const retrievedAccount = await userAccountModel.get(accountId);
   expect(retrievedAccount).to.have.property('username').that.equals('testuser');
@@ -276,7 +279,7 @@ async function ValidateHashedPasswordsTest() {
 }
 
 async function WorkWithSchemaRegistrationTest() {
-  @RegisterTable('schema_users', 'test_schema')
+  @RegisterTable('schema_users', 'integration-schema-reg')
   class SchemaUser extends Table {
     @Index({ primary: true })
     declare id: string;
@@ -287,7 +290,7 @@ async function WorkWithSchemaRegistrationTest() {
     declare name: string;
   }
 
-  @RegisterTable('schema_products', 'test_schema')
+  @RegisterTable('schema_products', 'integration-schema-reg')
   class SchemaProduct extends Table {
     @Index({ primary: true })
     declare id: string;
@@ -298,17 +301,14 @@ async function WorkWithSchemaRegistrationTest() {
     declare price: number;
   }
 
-  const databaseName = 'test-schema-integration-db';
-  const schemaName = 'test_schema';
+  await CreateDatabaseSchemaInstance('integration-schema-reg', 'test-schema-integration-db');
 
-  await InitializeDatabaseFromSchema(databaseName, schemaName);
-
-  const database = Database(databaseName);
+  const schemaInstance = getDatabase('integration-schema-reg', 'test-schema-integration-db');
   const UserModel = BasicDataModel(SchemaUser, 'schema_users');
   const ProductModel = BasicDataModel(SchemaProduct, 'schema_products');
 
-  const userModel = new UserModel(database);
-  const productModel = new ProductModel(database);
+  const userModel = new UserModel(schemaInstance);
+  const productModel = new ProductModel(schemaInstance);
 
   const userData = { email: 'user@example.com', name: 'Test User' };
   const productData = { name: 'Test Product', price: 29.99 };
@@ -316,18 +316,18 @@ async function WorkWithSchemaRegistrationTest() {
   const userResult = await userModel.insert(userData);
   const productResult = await productModel.insert(productData);
 
-  expect(userResult.generated_keys).to.have.length(1);
-  expect(productResult.generated_keys).to.have.length(1);
+  expect(userResult).to.have.length(1);
+  expect(productResult).to.have.length(1);
 
-  const retrievedUser = await userModel.get(userResult.generated_keys![0]);
-  const retrievedProduct = await productModel.get(productResult.generated_keys![0]);
+  const retrievedUser = await userModel.get(userResult[0]);
+  const retrievedProduct = await productModel.get(productResult[0]);
 
   expect(retrievedUser).to.have.property('email').that.equals('user@example.com');
   expect(retrievedProduct).to.have.property('name').that.equals('Test Product');
 }
 
 async function HandleComplexRelationshipsTest() {
-  @RegisterTable('orders')
+  @RegisterTable('orders', 'integration-rel-schema')
   class Order extends Table {
     @Index({ primary: true })
     declare id: string;
@@ -342,7 +342,7 @@ async function HandleComplexRelationshipsTest() {
     declare status: string;
   }
 
-  @RegisterTable('order_items')
+  @RegisterTable('order_items', 'integration-rel-schema')
   class OrderItem extends Table {
     @Index({ primary: true })
     declare id: string;
@@ -359,12 +359,12 @@ async function HandleComplexRelationshipsTest() {
 
   const OrderModel = BasicDataModel(Order, 'orders');
   const OrderItemModel = BasicDataModel(OrderItem, 'order_items');
-  const database = Database('test-relationships-db');
 
-  await InitializeDatabase('test-relationships-db', { orders: Order, order_items: OrderItem });
+  await CreateDatabaseSchemaInstance('integration-rel-schema', 'test-relationships-db');
+  const schemaInstance = getDatabase('integration-rel-schema', 'test-relationships-db');
 
-  const orderModel = new OrderModel(database);
-  const orderItemModel = new OrderItemModel(database);
+  const orderModel = new OrderModel(schemaInstance);
+  const orderItemModel = new OrderItemModel(schemaInstance);
 
   const orderData = {
     customerId: 'customer123',
@@ -374,7 +374,7 @@ async function HandleComplexRelationshipsTest() {
   };
 
   const orderResult = await orderModel.insert(orderData);
-  const orderId = orderResult.generated_keys![0];
+  const orderId = orderResult[0];
 
   const orderItemsData = [
     { orderId, productId: 'product1', quantity: 2, unitPrice: 99.99 },
@@ -382,7 +382,7 @@ async function HandleComplexRelationshipsTest() {
   ];
 
   const orderItemsResult = await orderItemModel.insert(orderItemsData);
-  expect(Object.keys(orderItemsResult.generated_keys || {})).to.have.length(2);
+  expect(orderItemsResult).to.have.length(2);
 
   const retrievedOrder = await orderModel.get(orderId);
   expect(retrievedOrder).to.have.property('customerId').that.equals('customer123');
@@ -394,7 +394,7 @@ async function HandleComplexRelationshipsTest() {
 }
 
 async function PerformBulkOperationsTest() {
-  @RegisterTable('bulk_products')
+  @RegisterTable('bulk_products', 'integration-bulk-schema')
   class BulkProduct extends Table {
     @Index({ primary: true })
     declare id: string;
@@ -407,10 +407,10 @@ async function PerformBulkOperationsTest() {
   }
 
   const BulkProductModel = BasicDataModel(BulkProduct, 'bulk_products');
-  const database = Database('test-bulk-db');
-  const bulkProductModel = new BulkProductModel(database);
 
-  await InitializeDatabase('test-bulk-db', { bulk_products: BulkProduct });
+  await CreateDatabaseSchemaInstance('integration-bulk-schema', 'test-bulk-db');
+  const schemaInstance = getDatabase('integration-bulk-schema', 'test-bulk-db');
+  const bulkProductModel = new BulkProductModel(schemaInstance);
 
   const bulkData = [
     { name: 'Product 1', category: 'Electronics', price: 99.99 },
@@ -421,7 +421,7 @@ async function PerformBulkOperationsTest() {
   ];
 
   const insertResult = await bulkProductModel.insert(bulkData);
-  expect(Object.keys(insertResult.generated_keys || {})).to.have.length(5);
+  expect(insertResult).to.have.length(5);
 
   const allProducts = await bulkProductModel.getAll();
   expect(allProducts).to.be.an('array');
@@ -441,7 +441,7 @@ async function ManageDatabaseInitializationTest() {
     { id: '1', name: 'Fixture User 1', email: 'fixture1@example.com' },
     { id: '2', name: 'Fixture User 2', email: 'fixture2@example.com' },
   ])
-  @RegisterTable('fixture_users')
+  @RegisterTable('fixture_users', 'integration-fixture-schema')
   class FixtureUser extends Table {
     @Index({ primary: true })
     declare id: string;
@@ -452,16 +452,11 @@ async function ManageDatabaseInitializationTest() {
     declare name: string;
   }
 
-  const databaseName = 'test-fixture-db';
-  const initInfo = await InitializeDatabaseFromSchema(databaseName);
+  await CreateDatabaseSchemaInstance('integration-fixture-schema', 'test-fixture-db');
 
-  expect(initInfo.databaseStatus).to.be.oneOf(['created', 'unchanged']);
-  expect(initInfo.tablesStatus).to.have.property('fixture_users');
-  expect(initInfo.oldTables).to.be.an('array');
-
-  const database = Database(databaseName);
+  const schemaInstance = getDatabase('integration-fixture-schema', 'test-fixture-db');
   const FixtureUserModel = BasicDataModel(FixtureUser, 'fixture_users');
-  const fixtureUserModel = new FixtureUserModel(database);
+  const fixtureUserModel = new FixtureUserModel(schemaInstance);
 
   const allUsers = await fixtureUserModel.getAll();
   expect(allUsers.length).to.be.greaterThan(0);

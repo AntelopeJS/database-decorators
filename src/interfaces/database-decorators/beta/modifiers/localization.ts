@@ -28,14 +28,14 @@ export class LocalizationModifier extends ContainerModifier<{}, Options> {
   }
 
   public override unlockrequest(
-    data: DatabaseDev.ValueProxy.Proxy<Record<string, unknown>>,
-    meta: DatabaseDev.ValueProxy.Proxy<{}>,
-    key: DatabaseDev.ValueProxy.ProxyOrVal<string>,
-  ): DatabaseDev.ValueProxy.Proxy<unknown> {
+    data: DatabaseDev.ValueProxy<Record<string, unknown>>,
+    meta: DatabaseDev.ValueProxy<{}>,
+    key: DatabaseDev.ValueProxyOrValue<string>,
+  ): DatabaseDev.ValueProxy<unknown> {
     if (this.options.fallbackLocale) {
-      return data(key).default(data(this.options.fallbackLocale));
+      return data.key(key).default(data.key(this.options.fallbackLocale));
     }
-    return data(key);
+    return data.key(key);
   }
 
   [MixinSymbol] = class {
