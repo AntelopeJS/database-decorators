@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Put, Delete, RawBody, Parameter } from '@ajs/api/beta';
-import { StaticModel, CreateDatabaseSchemaInstance } from '@ajs/database-decorators/beta';
+import { Model, CreateDatabaseSchemaInstance } from '@ajs/database-decorators/beta';
 import { UserModel } from './db/user';
 
 export class PlaygroundController extends Controller('/playground') {
-  @StaticModel(UserModel, 'default')
+  @Model(UserModel, 'default')
   declare userModel: UserModel;
 
   @Get('/users')

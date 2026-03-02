@@ -170,22 +170,20 @@ export function GetModel<M extends InstanceType<DataModel>>(cl: DataModel & Clas
   return model;
 }
 
-export const StaticModel = MakeParameterAndPropertyDecorator(
-  (target, key, index, cl: DataModel & Class<InstanceType<DataModel>>, instanceId?: string) => {
-    SetParameterProvider(target, key, index, () => GetModel(cl, instanceId));
-  },
-);
-
-export const DynamicModel = MakeParameterAndPropertyDecorator(
+export const Model = MakeParameterAndPropertyDecorator(
   (
     target,
     key,
     index,
     cl: DataModel & Class<InstanceType<DataModel>>,
-    callback: (ctx: RequestContext) => string | undefined,
+    instanceIdOrCallback?: string | ((ctx: RequestContext) => string | undefined),
   ) => {
-    SetParameterProvider(target, key, index, (ctx: RequestContext) => {
-      return GetModel(cl, callback(ctx));
-    });
+    if (typeof instanceIdOrCallback === 'function') {
+      SetParameterProvider(target, key, index, (ctx: RequestContext) => {
+        return GetModel(cl, instanceIdOrCallback(ctx));
+      });
+    } else {
+      SetParameterProvider(target, key, index, () => GetModel(cl, instanceIdOrCallback));
+    }
   },
 );

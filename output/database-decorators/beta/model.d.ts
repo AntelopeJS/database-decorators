@@ -95,11 +95,7 @@ export declare function BasicDataModel<T extends {}>(dataType: Constructible<T>,
     toDatabase(obj: any): Record<string, any>;
 };
 export declare function GetModel<M extends InstanceType<DataModel>>(cl: DataModel & Class<M>, instanceId?: string): M;
-export declare const StaticModel: (cl: DataModel<any> & Class<{
+export declare const Model: (cl: DataModel<any> & Class<{
     readonly database: DatabaseDev.SchemaInstance<any>;
     readonly table: DatabaseDev.Table<any>;
-}>, instanceId?: string | undefined) => import("@ajs/core/beta/decorators").PropertyDecorator & import("@ajs/core/beta/decorators").ParameterDecorator;
-export declare const DynamicModel: (cl: DataModel<any> & Class<{
-    readonly database: DatabaseDev.SchemaInstance<any>;
-    readonly table: DatabaseDev.Table<any>;
-}>, callback: (ctx: RequestContext) => string | undefined) => import("@ajs/core/beta/decorators").PropertyDecorator & import("@ajs/core/beta/decorators").ParameterDecorator;
+}>, instanceIdOrCallback?: string | ((ctx: RequestContext) => string | undefined) | undefined) => import("@ajs/core/beta/decorators").PropertyDecorator & import("@ajs/core/beta/decorators").ParameterDecorator;

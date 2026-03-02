@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BasicDataModel, GetModel, StaticModel, DynamicModel } from '@ajs.local/database-decorators/beta/model';
+import { BasicDataModel, GetModel, Model } from '@ajs.local/database-decorators/beta/model';
 import { Table, Index } from '@ajs.local/database-decorators/beta/table';
 import { RegisterTable } from '@ajs.local/database-decorators/beta/schema';
 import { CreateDatabaseSchemaInstance } from '@ajs.local/database-decorators/beta/database';
@@ -14,8 +14,8 @@ describe('Model - data operations', () => {
   it('handles null database data', async () => HandleNullDatabaseDataTest());
   it('gets model from cache', async () => GetModelFromCacheTest());
   it('creates new model when not cached', async () => CreateNewModelWhenNotCachedTest());
-  it('handles static model decorator', async () => HandleStaticModelDecoratorTest());
-  it('handles dynamic model decorator', async () => HandleDynamicModelDecoratorTest());
+  it('handles model with string instance id', async () => HandleModelWithStringInstanceIdTest());
+  it('handles model with callback instance id', async () => HandleModelWithCallbackInstanceIdTest());
 });
 
 async function CreateBasicDataModelTest() {
@@ -160,7 +160,7 @@ async function CreateNewModelWhenNotCachedTest() {
   expect(model2).to.be.instanceOf(TestModel);
 }
 
-async function HandleStaticModelDecoratorTest() {
+async function HandleModelWithStringInstanceIdTest() {
   @RegisterTable('static_table', 'model-static-schema')
   class TestTable extends Table {
     @Index({ primary: true })
@@ -170,7 +170,7 @@ async function HandleStaticModelDecoratorTest() {
   const TestModel = BasicDataModel(TestTable, 'static_table');
   await CreateDatabaseSchemaInstance('model-static-schema', 'test-static-model-db');
   class _TestService extends Controller('/staticmodel') {
-    @StaticModel(TestModel, 'test-static-model-db')
+    @Model(TestModel, 'test-static-model-db')
     model!: InstanceType<typeof TestModel>;
 
     @Get('/')
@@ -184,7 +184,7 @@ async function HandleStaticModelDecoratorTest() {
   expect(res.status, res.statusText).to.equal(200);
 }
 
-async function HandleDynamicModelDecoratorTest() {
+async function HandleModelWithCallbackInstanceIdTest() {
   @RegisterTable('dynamic_table', 'model-dynamic-schema')
   class TestTable extends Table {
     @Index({ primary: true })
@@ -194,7 +194,7 @@ async function HandleDynamicModelDecoratorTest() {
   const TestModel = BasicDataModel(TestTable, 'dynamic_table');
   await CreateDatabaseSchemaInstance('model-dynamic-schema', 'test-dynamic-model-db');
   class _TestService extends Controller('/dynamicmodel/:database') {
-    @DynamicModel(TestModel, (ctx: RequestContext) => ctx.routeParameters.database)
+    @Model(TestModel, (ctx: RequestContext) => ctx.routeParameters.database)
     model!: InstanceType<typeof TestModel>;
 
     @Get('/')
