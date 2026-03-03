@@ -9,7 +9,7 @@ export const TableRefSymbol = Symbol();
 export type ExtractTableMeta<T> = T extends { [TableMetaSymbol]: infer Meta } ? (Meta extends {} ? Meta : never) : {};
 
 export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} | undefined = undefined> {
-  new (...args: Args): { id: string } & Base & (Meta extends {} ? { [TableMetaSymbol]: Meta } : {});
+  new (...args: Args): { _id: string } & Base & (Meta extends {} ? { [TableMetaSymbol]: Meta } : {});
 
   /* public static */ with<This extends TableClass, T extends Constructible<{ [MixinSymbol]: Constructible }>[] = []>(
     this: This,
@@ -25,7 +25,7 @@ export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} 
  * Database Table superclass
  */
 export class Table {
-  declare id: string;
+  declare _id: string;
 
   /**
    * Supplement the superclass with Modifier mixins.
