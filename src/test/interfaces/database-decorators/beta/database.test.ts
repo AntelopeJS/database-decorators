@@ -6,7 +6,7 @@ import { Table, Index, Fixture } from '@ajs.local/database-decorators/beta/table
 
 describe('Database - initialization', () => {
   it('creates a schema instance', async () => CreateSchemaInstanceTest());
-  it('creates tables with primary keys', async () => CreateTablesWithPrimaryKeysTest());
+  it('creates tables with default primary key', async () => CreateTablesWithDefaultPrimaryKeyTest());
   it('creates tables with indexes', async () => CreateTablesWithIndexesTest());
   it('creates tables with grouped indexes', async () => CreateTablesWithGroupedIndexesTest());
   it('creates tables with fixture data', async () => CreateTablesWithFixtureDataTest());
@@ -18,9 +18,6 @@ describe('Database - initialization', () => {
 async function CreateSchemaInstanceTest() {
   @RegisterTable('test_table', 'test-new-schema')
   class _TestTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     declare name: string;
   }
 
@@ -30,12 +27,9 @@ async function CreateSchemaInstanceTest() {
   expect(schema).to.not.equal(undefined);
 }
 
-async function CreateTablesWithPrimaryKeysTest() {
+async function CreateTablesWithDefaultPrimaryKeyTest() {
   @RegisterTable('pk_table', 'test-pk-schema')
   class _TestTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     declare name: string;
   }
 
@@ -48,9 +42,6 @@ async function CreateTablesWithPrimaryKeysTest() {
 async function CreateTablesWithIndexesTest() {
   @RegisterTable('idx_table', 'test-idx-schema')
   class _TestTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare name: string;
 
@@ -67,9 +58,6 @@ async function CreateTablesWithIndexesTest() {
 async function CreateTablesWithGroupedIndexesTest() {
   @RegisterTable('grp_table', 'test-grp-schema')
   class _TestTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index({ group: 'user_search' })
     declare name: string;
 
@@ -95,9 +83,6 @@ async function CreateTablesWithFixtureDataTest() {
   @Fixture(() => testData)
   @RegisterTable('fixture_table', 'test-fixture-schema')
   class _TestTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     declare name: string;
   }
 
@@ -113,9 +98,6 @@ async function CreateTablesWithFixtureDataTest() {
 async function HandleMultipleTablesTest() {
   @RegisterTable('users', 'test-multi-table-schema')
   class _UserTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare email: string;
 
@@ -124,9 +106,6 @@ async function HandleMultipleTablesTest() {
 
   @RegisterTable('products', 'test-multi-table-schema')
   class _ProductTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare name: string;
 
@@ -142,9 +121,6 @@ async function HandleMultipleTablesTest() {
 async function CreateMultipleInstancesTest() {
   @RegisterTable('tenant_table', 'test-multi-instance-schema')
   class _TenantTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     declare name: string;
   }
 
@@ -172,9 +148,6 @@ async function InsertFixturesForEachInstanceTest() {
   @Fixture(() => testData)
   @RegisterTable('fixture_multi', 'test-fixture-multi-schema')
   class _FixtureTable extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     declare name: string;
   }
 

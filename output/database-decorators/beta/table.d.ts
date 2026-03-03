@@ -8,7 +8,9 @@ export type ExtractTableMeta<T> = T extends {
     [TableMetaSymbol]: infer Meta;
 } ? (Meta extends {} ? Meta : never) : {};
 export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} | undefined = undefined> {
-    new (...args: Args): Base & (Meta extends {} ? {
+    new (...args: Args): {
+        id: string;
+    } & Base & (Meta extends {} ? {
         [TableMetaSymbol]: Meta;
     } : {});
     with<This extends TableClass, T extends Constructible<{
@@ -19,6 +21,7 @@ export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} 
  * Database Table superclass
  */
 export declare class Table {
+    id: string;
     /**
      * Supplement the superclass with Modifier mixins.
      *
@@ -33,13 +36,11 @@ export declare class Table {
  * Database Table Index decorator.
  *
  * Available options:
- * - `primary`: This field is the primary key for the table.
  * - `group`: Index name for multi-field indexes.
  *
  * @param options Options
  */
 export declare const Index: (options?: {
-    primary?: boolean;
     group?: string;
 } | undefined) => import("@ajs/core/beta/decorators").PropertyDecorator;
 type AwaitableArray<T> = Promise<T | T[]> | T | T[];

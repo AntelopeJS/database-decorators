@@ -4,18 +4,15 @@ import { DatumStaticMetadata, getMetadata } from '@ajs.local/database-decorators
 import { MixinSymbol } from '@ajs.local/database-decorators/beta/modifiers/common';
 
 describe('Table - decorators', () => {
-  it('creates table with primary index', async () => CreateTableWithPrimaryIndexTest());
+  it('creates table with default primary key', async () => CreateTableWithDefaultPrimaryKeyTest());
   it('creates table with multiple indexes', async () => CreateTableWithMultipleIndexesTest());
   it('creates table with grouped indexes', async () => CreateTableWithGroupedIndexesTest());
   it('creates table with fixture data', async () => CreateTableWithFixtureDataTest());
   it('combines table with mixins', async () => CombineTableWithMixinsTest());
 });
 
-async function CreateTableWithPrimaryIndexTest() {
+async function CreateTableWithDefaultPrimaryKeyTest() {
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     @Index()
     name!: string;
   }
@@ -28,9 +25,6 @@ async function CreateTableWithPrimaryIndexTest() {
 
 async function CreateTableWithMultipleIndexesTest() {
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     @Index()
     email!: string;
 
@@ -47,9 +41,6 @@ async function CreateTableWithMultipleIndexesTest() {
 
 async function CreateTableWithGroupedIndexesTest() {
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     @Index({ group: 'user_search' })
     name!: string;
 
@@ -75,9 +66,6 @@ async function CreateTableWithFixtureDataTest() {
 
   @Fixture(() => testData)
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
   }
 
@@ -101,9 +89,6 @@ async function CombineTableWithMixinsTest() {
   }
 
   class TestTable extends Table.with(TestMixin) {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
   }
 
@@ -111,7 +96,6 @@ async function CombineTableWithMixinsTest() {
   expect(instance).to.have.property('testMethod');
   expect(instance.testMethod()).to.equal('mixin method ok');
   expect(instance).to.not.have.property('testMethodUnunvailable');
-  expect(instance).to.have.property('id');
   expect(instance).to.have.property('name');
   expect(instance).to.be.instanceOf(TestTable);
 }

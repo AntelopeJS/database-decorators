@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BasicDataModel, GetModel, Model } from '@ajs.local/database-decorators/beta/model';
-import { Table, Index } from '@ajs.local/database-decorators/beta/table';
+import { Table } from '@ajs.local/database-decorators/beta/table';
 import { RegisterTable } from '@ajs.local/database-decorators/beta/schema';
 import { CreateDatabaseSchemaInstance } from '@ajs.local/database-decorators/beta/database';
 import { Controller, Get, RequestContext } from '@ajs/api/beta';
@@ -20,9 +20,6 @@ describe('Model - data operations', () => {
 
 async function CreateBasicDataModelTest() {
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
     age!: number;
   }
@@ -36,9 +33,6 @@ async function CreateBasicDataModelTest() {
 async function CreateBasicDataModelFromMetadataTest() {
   @RegisterTable('meta_table', 'model-meta-schema')
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
   }
 
@@ -50,9 +44,6 @@ async function CreateBasicDataModelFromMetadataTest() {
 
 async function ConvertPlainDataToTableTest() {
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
     age!: number;
   }
@@ -84,9 +75,6 @@ async function ConvertDatabaseDataToTableTest() {
 
 async function ConvertTableToDatabaseDataTest() {
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
     age!: number;
   }
@@ -106,9 +94,6 @@ async function ConvertTableToDatabaseDataTest() {
 
 async function HandleNullDatabaseDataTest() {
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
   }
 
@@ -121,9 +106,6 @@ async function HandleNullDatabaseDataTest() {
 async function GetModelFromCacheTest() {
   @RegisterTable('cache_table', 'model-cache-schema')
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
   }
 
@@ -141,9 +123,6 @@ async function GetModelFromCacheTest() {
 async function CreateNewModelWhenNotCachedTest() {
   @RegisterTable('nocache_table', 'model-nocache-schema')
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
   }
 
@@ -163,8 +142,6 @@ async function CreateNewModelWhenNotCachedTest() {
 async function HandleModelWithStringInstanceIdTest() {
   @RegisterTable('static_table', 'model-static-schema')
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
     name!: string;
   }
   const TestModel = BasicDataModel(TestTable, 'static_table');
@@ -187,8 +164,6 @@ async function HandleModelWithStringInstanceIdTest() {
 async function HandleModelWithCallbackInstanceIdTest() {
   @RegisterTable('dynamic_table', 'model-dynamic-schema')
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
     name!: string;
   }
   const TestModel = BasicDataModel(TestTable, 'dynamic_table');

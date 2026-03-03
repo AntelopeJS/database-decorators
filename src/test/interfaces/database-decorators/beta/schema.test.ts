@@ -14,9 +14,6 @@ describe('Schema - RegisterTable decorator', () => {
 async function StoreTableNameAndSchemaNameInMetadataTest() {
   @RegisterTable('test_table', 'test-schema')
   class TestTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     name!: string;
   }
 
@@ -28,9 +25,6 @@ async function StoreTableNameAndSchemaNameInMetadataTest() {
 async function StoreTableNameForMultipleClassesTest() {
   @RegisterTable('user_table', 'multi-schema')
   class UserTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     @Index()
     email!: string;
 
@@ -39,9 +33,6 @@ async function StoreTableNameForMultipleClassesTest() {
 
   @RegisterTable('product_table', 'multi-schema')
   class ProductTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     @Index()
     name!: string;
 
@@ -60,9 +51,6 @@ async function StoreTableNameForMultipleClassesTest() {
 async function PreserveExistingMetadataTest() {
   @RegisterTable('indexed_table', 'preserve-schema')
   class IndexedTable extends Table {
-    @Index({ primary: true })
-    id!: string;
-
     @Index()
     email!: string;
 
@@ -78,16 +66,10 @@ async function PreserveExistingMetadataTest() {
 
 async function RegisterTablesInSchemaRegistryTest() {
   @RegisterTable('reg_users', 'registry-schema')
-  class _RegUser extends Table {
-    @Index({ primary: true })
-    id!: string;
-  }
+  class _RegUser extends Table {}
 
   @RegisterTable('reg_products', 'registry-schema')
-  class _RegProduct extends Table {
-    @Index({ primary: true })
-    id!: string;
-  }
+  class _RegProduct extends Table {}
 
   const tables = getTablesForSchema('registry-schema');
   expect(tables).to.not.equal(undefined);

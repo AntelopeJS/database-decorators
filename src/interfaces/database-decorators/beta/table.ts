@@ -9,7 +9,7 @@ export const TableRefSymbol = Symbol();
 export type ExtractTableMeta<T> = T extends { [TableMetaSymbol]: infer Meta } ? (Meta extends {} ? Meta : never) : {};
 
 export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} | undefined = undefined> {
-  new (...args: Args): Base & (Meta extends {} ? { [TableMetaSymbol]: Meta } : {});
+  new (...args: Args): { id: string } & Base & (Meta extends {} ? { [TableMetaSymbol]: Meta } : {});
 
   /* public static */ with<This extends TableClass, T extends Constructible<{ [MixinSymbol]: Constructible }>[] = []>(
     this: This,
@@ -25,6 +25,8 @@ export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} 
  * Database Table superclass
  */
 export class Table {
+  declare id: string;
+
   /**
    * Supplement the superclass with Modifier mixins.
    *
@@ -63,18 +65,13 @@ export class Table {
  * Database Table Index decorator.
  *
  * Available options:
- * - `primary`: This field is the primary key for the table.
  * - `group`: Index name for multi-field indexes.
  *
  * @param options Options
  */
-export const Index = MakePropertyDecorator((target, propertyKey, options?: { primary?: boolean; group?: string }) => {
+export const Index = MakePropertyDecorator((target, propertyKey, options?: { group?: string }) => {
   const metadata = getMetadata(target.constructor, DatumStaticMetadata);
-  if (options?.primary) {
-    metadata.primary = <string>propertyKey;
-  } else {
-    metadata.addIndex(<string>propertyKey, options?.group || <string>propertyKey);
-  }
+  metadata.addIndex(<string>propertyKey, options?.group || <string>propertyKey);
 });
 
 type AwaitableArray<T> = Promise<T | T[]> | T | T[];

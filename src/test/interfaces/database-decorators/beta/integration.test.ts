@@ -27,9 +27,6 @@ describe('Integration - real database operations', () => {
 async function CreateAndQueryUserWithModifiersTest() {
   @RegisterTable('users', 'integration-modifiers-schema')
   class User extends Table.with(HashModifier, EncryptionModifier) {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare email: string;
 
@@ -89,9 +86,6 @@ async function CreateAndQueryUserWithModifiersTest() {
 async function PerformCrudOperationsOnProductsTest() {
   @RegisterTable('products', 'integration-crud-schema')
   class Product extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare name: string;
 
@@ -140,9 +134,6 @@ async function PerformCrudOperationsOnProductsTest() {
 async function HandleLocalizedContentTest() {
   @RegisterTable('localized_content', 'integration-l10n-schema')
   class LocalizedContent extends Table.with(LocalizationModifier) {
-    @Index({ primary: true })
-    declare id: string;
-
     declare category: string;
 
     @Localized({ fallbackLocale: 'en' })
@@ -193,9 +184,6 @@ async function HandleLocalizedContentTest() {
 async function ManageEncryptedSensitiveDataTest() {
   @RegisterTable('sensitive_data', 'integration-encrypt-schema')
   class SensitiveData extends Table.with(EncryptionModifier) {
-    @Index({ primary: true })
-    declare id: string;
-
     @Encrypted({ secretKey: '12345678901234567890123456789012' })
     declare creditCard: string;
 
@@ -238,9 +226,6 @@ async function ManageEncryptedSensitiveDataTest() {
 async function ValidateHashedPasswordsTest() {
   @RegisterTable('user_accounts', 'integration-hash-schema')
   class UserAccount extends Table.with(HashModifier) {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare username: string;
 
@@ -281,9 +266,6 @@ async function ValidateHashedPasswordsTest() {
 async function WorkWithSchemaRegistrationTest() {
   @RegisterTable('schema_users', 'integration-schema-reg')
   class SchemaUser extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare email: string;
 
@@ -292,9 +274,6 @@ async function WorkWithSchemaRegistrationTest() {
 
   @RegisterTable('schema_products', 'integration-schema-reg')
   class SchemaProduct extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare name: string;
 
@@ -329,9 +308,6 @@ async function WorkWithSchemaRegistrationTest() {
 async function HandleComplexRelationshipsTest() {
   @RegisterTable('orders', 'integration-rel-schema')
   class Order extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare customerId: string;
 
@@ -344,9 +320,6 @@ async function HandleComplexRelationshipsTest() {
 
   @RegisterTable('order_items', 'integration-rel-schema')
   class OrderItem extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare orderId: string;
 
@@ -396,9 +369,6 @@ async function HandleComplexRelationshipsTest() {
 async function PerformBulkOperationsTest() {
   @RegisterTable('bulk_products', 'integration-bulk-schema')
   class BulkProduct extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare category: string;
 
@@ -443,9 +413,6 @@ async function ManageDatabaseInitializationTest() {
   ])
   @RegisterTable('fixture_users', 'integration-fixture-schema')
   class FixtureUser extends Table {
-    @Index({ primary: true })
-    declare id: string;
-
     @Index()
     declare email: string;
 
