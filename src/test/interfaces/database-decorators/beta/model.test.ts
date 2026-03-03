@@ -49,11 +49,11 @@ async function ConvertPlainDataToTableTest() {
   }
 
   const TestModel = BasicDataModel(TestTable, 'test_table');
-  const plainData = { id: '1', name: 'John', age: 30 };
+  const plainData = { _id: '1', name: 'John', age: 30 };
   const instance = TestModel.fromPlainData(plainData);
 
   expect(instance).to.be.instanceOf(TestTable);
-  expect(instance.id).to.equal('1');
+  expect(instance._id).to.equal('1');
   expect(instance.name).to.equal('John');
   expect(instance.age).to.equal(30);
 }
@@ -81,13 +81,13 @@ async function ConvertTableToDatabaseDataTest() {
 
   const TestModel = BasicDataModel(TestTable, 'test_table');
   const instance = new TestTable();
-  instance.id = '1';
+  instance._id = '1';
   instance.name = 'John';
   instance.age = 30;
 
   const dbData = TestModel.toDatabase(instance);
 
-  expect(dbData.id).to.equal('1');
+  expect(dbData._id).to.equal('1');
   expect(dbData.name).to.equal('John');
   expect(dbData.age).to.equal(30);
 }

@@ -9,7 +9,7 @@ export type ExtractTableMeta<T> = T extends {
 } ? (Meta extends {} ? Meta : never) : {};
 export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} | undefined = undefined> {
     new (...args: Args): {
-        id: string;
+        _id: string;
     } & Base & (Meta extends {} ? {
         [TableMetaSymbol]: Meta;
     } : {});
@@ -21,7 +21,7 @@ export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} 
  * Database Table superclass
  */
 export declare class Table {
-    id: string;
+    _id: string;
     /**
      * Supplement the superclass with Modifier mixins.
      *

@@ -150,7 +150,7 @@ async function HandleLocalizedContentTest() {
   const contentModel = new ContentModel(schemaInstance);
 
   const content = new LocalizedContent();
-  content.id = 'content-123';
+  content._id = 'content-123';
   content.category = 'News';
 
   content.localize('en').title = 'English Title';
