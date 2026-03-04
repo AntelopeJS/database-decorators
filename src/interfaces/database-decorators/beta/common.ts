@@ -26,7 +26,7 @@ export class DatumStaticMetadata {
   public tableName?: string;
   public schemaName?: string;
   public readonly indexes: Record<string, Array<string>> = {};
-  public primary: string = 'id';
+  public primary: string = '_id';
   public generator?: DatumGenerator;
 
   addIndex(key: string, group: string) {
