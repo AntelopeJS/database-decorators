@@ -19,7 +19,7 @@ async function CreateTableWithDefaultPrimaryKeyTest() {
 
   const metadata = getMetadata(TestTable, DatumStaticMetadata);
 
-  expect(metadata.primary).to.equal('id');
+  expect(metadata.primary).to.equal('_id');
   expect(metadata.indexes.name).to.deep.equal(['name']);
 }
 
@@ -34,7 +34,7 @@ async function CreateTableWithMultipleIndexesTest() {
 
   const metadata = getMetadata(TestTable, DatumStaticMetadata);
 
-  expect(metadata.primary).to.equal('id');
+  expect(metadata.primary).to.equal('_id');
   expect(metadata.indexes.email).to.deep.equal(['email']);
   expect(metadata.indexes.age).to.deep.equal(['age']);
 }
@@ -53,7 +53,7 @@ async function CreateTableWithGroupedIndexesTest() {
 
   const metadata = getMetadata(TestTable, DatumStaticMetadata);
 
-  expect(metadata.primary).to.equal('id');
+  expect(metadata.primary).to.equal('_id');
   expect(metadata.indexes.user_search).to.deep.equal(['name', 'email']);
   expect(metadata.indexes.age_range).to.deep.equal(['age']);
 }
@@ -72,7 +72,7 @@ async function CreateTableWithFixtureDataTest() {
   const metadata = getMetadata(TestTable, DatumStaticMetadata);
 
   expect(metadata.generator).to.be.a('function');
-  expect(metadata.primary).to.equal('id');
+  expect(metadata.primary).to.equal('_id');
 }
 
 async function CombineTableWithMixinsTest() {

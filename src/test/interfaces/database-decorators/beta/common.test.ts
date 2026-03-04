@@ -13,7 +13,7 @@ describe('Common - metadata', () => {
 async function CreateMetadataWithDefaultValuesTest() {
   const metadata = new DatumStaticMetadata();
 
-  expect(metadata.primary).to.equal('id');
+  expect(metadata.primary).to.equal('_id');
   expect(metadata.indexes).to.deep.equal({});
   expect(metadata.generator).to.equal(undefined);
 }
@@ -32,7 +32,7 @@ async function CreateNewMetadataWhenNotExistsTest() {
   const metadata = getMetadata(TestClass, DatumStaticMetadata);
 
   expect(metadata).to.be.instanceOf(DatumStaticMetadata);
-  expect(metadata.primary).to.equal('id');
+  expect(metadata.primary).to.equal('_id');
 }
 
 async function RetrieveExistingMetadataTest() {

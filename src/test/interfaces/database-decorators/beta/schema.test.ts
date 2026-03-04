@@ -60,7 +60,7 @@ async function PreserveExistingMetadataTest() {
   const metadata = getMetadata(IndexedTable, DatumStaticMetadata);
   expect(metadata.tableName).to.equal('indexed_table');
   expect(metadata.schemaName).to.equal('preserve-schema');
-  expect(metadata.primary).to.equal('id');
+  expect(metadata.primary).to.equal('_id');
   expect(metadata.indexes).to.have.property('email');
 }
 
