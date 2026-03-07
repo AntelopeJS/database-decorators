@@ -1,4 +1,6 @@
-export type Constructible<T = object, A extends unknown[] = unknown[]> = new (...args: A) => T;
+export type Constructible<T = object, A extends unknown[] = unknown[]> = new (
+  ...args: A
+) => T;
 
 export type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends Array<infer U1>
@@ -10,8 +12,13 @@ export type DeepPartial<T> = {
         : T[K];
 };
 
-export type DatumGeneratorOutput = Record<string, unknown> | Array<Record<string, unknown>> | undefined;
-export type DatumGenerator = (tableClass: Constructible) => DatumGeneratorOutput | Promise<DatumGeneratorOutput>;
+export type DatumGeneratorOutput =
+  | Record<string, unknown>
+  | Array<Record<string, unknown>>
+  | undefined;
+export type DatumGenerator = (
+  tableClass: Constructible,
+) => DatumGeneratorOutput | Promise<DatumGeneratorOutput>;
 
 export interface MetadataClass<TMetadata> extends Constructible<TMetadata> {
   key: symbol;
@@ -26,7 +33,7 @@ export class DatumStaticMetadata {
   public tableName?: string;
   public schemaName?: string;
   public readonly indexes: Record<string, Array<string>> = {};
-  public primary: string = '_id';
+  public primary: string = "_id";
   public generator?: DatumGenerator;
 
   addIndex(key: string, group: string) {
@@ -42,14 +49,20 @@ export function getMetadata<TMetadata, TTarget extends object>(
   metadataClass: MetadataClass<TMetadata>,
   inherit: boolean = true,
 ): TMetadata {
-  const existingMetadata = Reflect.getOwnMetadata(metadataClass.key, target) as TMetadata | undefined;
+  const existingMetadata = Reflect.getOwnMetadata(metadataClass.key, target) as
+    | TMetadata
+    | undefined;
   if (existingMetadata) {
     return existingMetadata;
   }
 
   const prototype = Object.getPrototypeOf(target) as TTarget | null;
   const inheritedMetadata =
-    inherit && prototype ? (Reflect.getOwnMetadata(metadataClass.key, prototype) as TMetadata | undefined) : undefined;
+    inherit && prototype
+      ? (Reflect.getOwnMetadata(metadataClass.key, prototype) as
+          | TMetadata
+          | undefined)
+      : undefined;
   const metadata = inheritedMetadata ?? new metadataClass(target);
   Reflect.defineMetadata(metadataClass.key, metadata, target);
   return metadata;

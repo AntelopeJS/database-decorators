@@ -1,7 +1,13 @@
-import * as DatabaseDev from '@ajs/database/beta';
-import { MixinSymbol, attachModifier, TwoWayModifier } from './common';
-import { MakePropertyDecorator } from '@ajs/core/beta/decorators';
-import { CipherCCM, DecipherCCM, createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+import {
+  type CipherCCM,
+  createCipheriv,
+  createDecipheriv,
+  type DecipherCCM,
+  randomBytes,
+} from "node:crypto";
+import { MakePropertyDecorator } from "@ajs/core/beta/decorators";
+import type * as DatabaseDev from "@ajs/database/beta";
+import { attachModifier, MixinSymbol, TwoWayModifier } from "./common";
 
 type Options = {
   /** Encryption algorithm (for supported algorithms refer to {@link createCipheriv}) */
@@ -11,25 +17,25 @@ type Options = {
   /** Initialization Vector size. */
   ivSize?: number;
 };
-type Meta = {};
+type Meta = Record<string, never>;
 type LockedType = [ciphertext: string, iv: string, authTag?: string];
 
 function date_encoder(this: any, key: string) {
   return this[key] instanceof Date
     ? {
         value: this[key].toUTCString(),
-        type: 'Date',
+        type: "Date",
       }
     : this[key];
 }
 
-function date_decoder(key: string, value: any) {
+function date_decoder(_key: string, value: any) {
   return value !== null &&
-    typeof value === 'object' &&
+    typeof value === "object" &&
     Object.keys(value).length === 2 &&
-    Object.keys(value).includes('type') &&
-    Object.keys(value).includes('value') &&
-    value.type === 'Date'
+    Object.keys(value).includes("type") &&
+    Object.keys(value).includes("value") &&
+    value.type === "Date"
     ? new Date(value.value)
     : value;
 }
@@ -39,46 +45,67 @@ function date_decoder(key: string, value: any) {
  *
  * These fields are stored encrypted in the database.
  */
-export class EncryptionModifier extends TwoWayModifier<LockedType, [], Meta, Options> {
+export class EncryptionModifier extends TwoWayModifier<
+  LockedType,
+  [],
+  Meta,
+  Options
+> {
   readonly autolock = true;
 
-  public override lock(_locked_value: LockedType | undefined, value: unknown): LockedType {
+  public override lock(
+    _locked_value: LockedType | undefined,
+    value: unknown,
+  ): LockedType {
     const iv = randomBytes(this.options.ivSize || 16);
-    const cipher = createCipheriv(this.options.algorithm || 'aes-256-gcm', this.options.secretKey, iv);
-    const encrypted = Buffer.concat([cipher.update(JSON.stringify(value, date_encoder)), cipher.final()]).toString(
-      'base64',
+    const cipher = createCipheriv(
+      this.options.algorithm || "aes-256-gcm",
+      this.options.secretKey,
+      iv,
     );
+    const encrypted = Buffer.concat([
+      cipher.update(JSON.stringify(value, date_encoder)),
+      cipher.final(),
+    ]).toString("base64");
 
     let authTag: string | undefined;
     try {
-      authTag = 'getAuthTag' in cipher ? (<CipherCCM>cipher).getAuthTag().toString('base64') : undefined;
+      authTag =
+        "getAuthTag" in cipher
+          ? (<CipherCCM>cipher).getAuthTag().toString("base64")
+          : undefined;
     } catch {
       // Ignore error if getAuthTag is not available
     }
 
-    return [encrypted, iv.toString('base64'), authTag];
+    return [encrypted, iv.toString("base64"), authTag];
   }
 
   readonly autounlock = true;
 
   public override unlock([locked_value, iv_str, authTag]: LockedType) {
     const decipher = createDecipheriv(
-      this.options.algorithm || 'aes-256-gcm',
+      this.options.algorithm || "aes-256-gcm",
       this.options.secretKey,
-      Buffer.from(iv_str, 'base64'),
+      Buffer.from(iv_str, "base64"),
     );
 
-    if ('setAuthTag' in decipher && authTag) {
-      (<DecipherCCM>decipher).setAuthTag(Buffer.from(authTag, 'base64'));
+    if ("setAuthTag" in decipher && authTag) {
+      (<DecipherCCM>decipher).setAuthTag(Buffer.from(authTag, "base64"));
     }
 
     return JSON.parse(
-      Buffer.concat([decipher.update(Buffer.from(locked_value, 'base64')), decipher.final()]).toString('utf8'),
+      Buffer.concat([
+        decipher.update(Buffer.from(locked_value, "base64")),
+        decipher.final(),
+      ]).toString("utf8"),
       date_decoder,
     ) as unknown;
   }
 
-  public override unlockrequest(data: DatabaseDev.ValueProxy<LockedType>): DatabaseDev.ValueProxy<unknown> {
+  public override unlockrequest(
+    data: DatabaseDev.ValueProxy<LockedType>,
+  ): DatabaseDev.ValueProxy<unknown> {
     return data as DatabaseDev.ValueProxy<unknown>;
   }
 
@@ -92,6 +119,13 @@ export class EncryptionModifier extends TwoWayModifier<LockedType, [], Meta, Opt
  *
  * @param options Encryption options.
  */
-export const Encrypted = MakePropertyDecorator((target, propertyKey, options: Options) => {
-  attachModifier(target.constructor, EncryptionModifier, propertyKey, options);
-});
+export const Encrypted = MakePropertyDecorator(
+  (target, propertyKey, options: Options) => {
+    attachModifier(
+      target.constructor,
+      EncryptionModifier,
+      propertyKey,
+      options,
+    );
+  },
+);

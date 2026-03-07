@@ -1,7 +1,12 @@
-import { createHash } from 'crypto';
-import { generate } from 'randomstring';
-import { MixinSymbol, OneWayModifier, attachModifier, testValue } from './common';
-import { MakePropertyDecorator } from '@ajs/core/beta/decorators';
+import { createHash } from "node:crypto";
+import { MakePropertyDecorator } from "@ajs/core/beta/decorators";
+import { generate } from "randomstring";
+import {
+  attachModifier,
+  MixinSymbol,
+  OneWayModifier,
+  testValue,
+} from "./common";
 
 type Options = {
   /** Hashing algorithm (for supported algorithms refer to {@link createHash}) */
@@ -15,20 +20,25 @@ type Options = {
  * Because of this, you lose the ability to query the information directly.
  * You can test equality using {@link testHash}
  */
-export class HashModifier extends OneWayModifier<string | undefined, [], { salt?: string }, Options> {
+export class HashModifier extends OneWayModifier<
+  string | undefined,
+  [],
+  { salt?: string },
+  Options
+> {
   public readonly autolock = true;
 
-  public override lock(locked_value: string | undefined, value: unknown) {
+  public override lock(_locked_value: string | undefined, value: unknown) {
     if (value === undefined) {
       return value;
     }
     if (!this.meta.salt) {
       this.meta.salt = generate();
     }
-    return createHash(this.options.algorithm || 'sha256')
+    return createHash(this.options.algorithm || "sha256")
       .update(this.meta.salt)
       .update(JSON.stringify(value))
-      .digest('base64');
+      .digest("base64");
   }
 
   [MixinSymbol] = class {
@@ -40,7 +50,11 @@ export class HashModifier extends OneWayModifier<string | undefined, [], { salt?
      *
      * @returns Whether the new value is identical to the original or not.
      */
-    testHash<This extends {}, F extends keyof This>(this: This, field: F, value: This[F]) {
+    testHash<This extends {}, F extends keyof This>(
+      this: This,
+      field: F,
+      value: This[F],
+    ) {
       return testValue(this, field, value);
     }
   };
@@ -53,6 +67,13 @@ export class HashModifier extends OneWayModifier<string | undefined, [], { salt?
  *
  * @param options Hash options.
  */
-export const Hashed = MakePropertyDecorator((target, propertyKey, options?: Options) => {
-  attachModifier(target.constructor, HashModifier, propertyKey, options || {});
-});
+export const Hashed = MakePropertyDecorator(
+  (target, propertyKey, options?: Options) => {
+    attachModifier(
+      target.constructor,
+      HashModifier,
+      propertyKey,
+      options || {},
+    );
+  },
+);

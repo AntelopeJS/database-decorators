@@ -1,5 +1,5 @@
-import * as DatabaseDev from '@ajs/database/beta';
-import { MixinSymbol, ContainerModifier } from './common';
+import type * as DatabaseDev from "@ajs/database/beta";
+import { ContainerModifier, MixinSymbol } from "./common";
 type Options = {
     /** Fallback locale to use when no value exists for the selected locale. */
     fallbackLocale?: string;
@@ -13,9 +13,9 @@ type Options = {
  *
  * See {@link ContainerModifier} for the generic modifier.
  */
-export declare class LocalizationModifier extends ContainerModifier<{}, Options> {
+export declare class LocalizationModifier extends ContainerModifier<Record<string, never>, Options> {
     unlock(locked_value: Record<string, unknown>, key: string): unknown;
-    unlockrequest(data: DatabaseDev.ValueProxy<Record<string, unknown>>, meta: DatabaseDev.ValueProxy<{}>, key: DatabaseDev.ValueProxyOrValue<string>): DatabaseDev.ValueProxy<unknown>;
+    unlockrequest(data: DatabaseDev.ValueProxy<Record<string, unknown>>, _meta: DatabaseDev.ValueProxy<Record<string, never>>, key: DatabaseDev.ValueProxyOrValue<string>): DatabaseDev.ValueProxy<unknown>;
     [MixinSymbol]: {
         new (): {
             /**

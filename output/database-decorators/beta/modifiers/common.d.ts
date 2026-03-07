@@ -1,30 +1,30 @@
-import * as DatabaseDev from '@ajs/database/beta';
-import { Constructible } from '../common';
+import type * as DatabaseDev from "@ajs/database/beta";
+import { type Constructible } from "../common";
 export declare const MixinSymbol: unique symbol;
 export type MixinType<T> = T extends {
     [MixinSymbol]: infer A;
 } ? A : never;
-export declare class Modifier<Meta extends {} = {}, Options extends {} = {}> {
+export declare class Modifier<Meta extends object = object, Options extends object = object> {
     protected meta: Meta;
     protected options: Options;
 }
-export declare class OneWayModifier<LockedType, Args extends any[] = [], Meta extends {} = {}, Options extends {} = {}> extends Modifier<Meta, Options> {
+export declare class OneWayModifier<LockedType, Args extends any[] = [], Meta extends object = object, Options extends object = object> extends Modifier<Meta, Options> {
     lock(_locked_value: LockedType | undefined, _value: unknown, ..._args: Args): LockedType;
     test(locked_value: LockedType, value: unknown, ...args: Args): boolean;
 }
 type ProxyOrValArray<T extends any[]> = {
     [K in keyof T]: DatabaseDev.ValueProxyOrValue<T[K]>;
 };
-export declare class TwoWayModifier<LockedType, Args extends any[] = [], Meta extends {} = {}, Options extends {} = {}> extends OneWayModifier<LockedType, Args, Meta, Options> {
+export declare class TwoWayModifier<LockedType, Args extends any[] = [], Meta extends object = object, Options extends object = object> extends OneWayModifier<LockedType, Args, Meta, Options> {
     unlock(_locked_value: LockedType, ..._args: Args): unknown;
     unlockrequest(_data: DatabaseDev.ValueProxy<LockedType>, _meta: DatabaseDev.ValueProxy<Meta>, ..._args: ProxyOrValArray<Args>): DatabaseDev.ValueProxy<unknown>;
 }
-export declare class ContainerModifier<Meta extends {} = {}, Options extends {} = {}> extends TwoWayModifier<Record<string, unknown>, [
+export declare class ContainerModifier<Meta extends object = object, Options extends object = object> extends TwoWayModifier<Record<string, unknown>, [
     key: string
 ], Meta, Options> {
     lock(locked_value: Record<string, unknown> | undefined, value: unknown, key: string): Record<string, unknown>;
     unlock(locked_value: Record<string, unknown>, key: string): unknown;
-    unlockrequest(data: DatabaseDev.ValueProxy<Record<string, unknown>>, meta: DatabaseDev.ValueProxy<Meta>, key: DatabaseDev.ValueProxyOrValue<string>): DatabaseDev.ValueProxy<unknown>;
+    unlockrequest(data: DatabaseDev.ValueProxy<Record<string, unknown>>, _meta: DatabaseDev.ValueProxy<Meta>, key: DatabaseDev.ValueProxyOrValue<string>): DatabaseDev.ValueProxy<unknown>;
 }
 interface InternalType {
     meta: Record<string, object>;

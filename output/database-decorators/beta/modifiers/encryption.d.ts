@@ -1,5 +1,5 @@
-import * as DatabaseDev from '@ajs/database/beta';
-import { MixinSymbol, TwoWayModifier } from './common';
+import type * as DatabaseDev from "@ajs/database/beta";
+import { MixinSymbol, TwoWayModifier } from "./common";
 type Options = {
     /** Encryption algorithm (for supported algorithms refer to {@link createCipheriv}) */
     algorithm?: string;
@@ -8,14 +8,15 @@ type Options = {
     /** Initialization Vector size. */
     ivSize?: number;
 };
-type Meta = {};
+type Meta = Record<string, never>;
 type LockedType = [ciphertext: string, iv: string, authTag?: string];
 /**
  * Encryption modifier. enables the use of {@link Encrypted} on table fields.
  *
  * These fields are stored encrypted in the database.
  */
-export declare class EncryptionModifier extends TwoWayModifier<LockedType, [], Meta, Options> {
+export declare class EncryptionModifier extends TwoWayModifier<LockedType, [
+], Meta, Options> {
     readonly autolock = true;
     lock(_locked_value: LockedType | undefined, value: unknown): LockedType;
     readonly autounlock = true;
