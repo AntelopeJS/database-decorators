@@ -1,6 +1,11 @@
-import { BasicDataModel, Index, Table, RegisterTable } from '@ajs/database-decorators/beta';
+import {
+  BasicDataModel,
+  Index,
+  RegisterTable,
+  Table,
+} from "@ajs/database-decorators/beta";
 
-@RegisterTable('users', 'app')
+@RegisterTable("users", "app")
 class User extends Table {
   @Index()
   declare email: string;
@@ -9,4 +14,7 @@ class User extends Table {
   declare lastName: string;
 }
 
-export class UserModel extends BasicDataModel(User, 'database-decorators-playground') {}
+export class UserModel extends BasicDataModel(
+  User,
+  "database-decorators-playground",
+) {}

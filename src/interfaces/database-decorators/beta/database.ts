@@ -1,12 +1,16 @@
-import { Schema, type SchemaDefinition, type SchemaOptions } from '@ajs/database/beta';
-import type { IndexDefinition } from '@ajs/database/beta/schema';
-import { Class } from '@ajs/core/beta/decorators';
-import { Table } from './table';
-import { DatumStaticMetadata, getMetadata } from './common';
-import { fromPlainData, toDatabase, triggerEvent } from './modifiers/common';
-import type { DatumGeneratorOutput } from './common';
-import { getTablesForSchema } from './schema';
-import assert from 'assert';
+import assert from "node:assert";
+import type { Class } from "@ajs/core/beta/decorators";
+import {
+  Schema,
+  type SchemaDefinition,
+  type SchemaOptions,
+} from "@ajs/database/beta";
+import type { IndexDefinition } from "@ajs/database/beta/schema";
+import type { DatumGeneratorOutput } from "./common";
+import { DatumStaticMetadata, getMetadata } from "./common";
+import { fromPlainData, toDatabase, triggerEvent } from "./modifiers/common";
+import { getTablesForSchema } from "./schema";
+import type { Table } from "./table";
 
 type TableDefinitions = Record<string, Class<Table>>;
 type TableEntry = Record<string, unknown>;
@@ -49,7 +53,13 @@ async function insertAllFixtureData(
   await Promise.all(
     Object.entries(tables).map(([tableName, tableClass]) => {
       const metadata = getMetadata(tableClass, DatumStaticMetadata);
-      return insertFixtureData(schema, instanceId, tableName, tableClass, metadata.generator);
+      return insertFixtureData(
+        schema,
+        instanceId,
+        tableName,
+        tableClass,
+        metadata.generator,
+      );
     }),
   );
 }
@@ -59,7 +69,7 @@ async function insertFixtureData(
   instanceId: string | undefined,
   tableName: string,
   tableClass: Class<Table>,
-  generator: DatumStaticMetadata['generator'],
+  generator: DatumStaticMetadata["generator"],
 ): Promise<void> {
   if (!generator) {
     return;
@@ -77,15 +87,22 @@ async function insertFixtureData(
   await schema.instance(instanceId).table(tableName).insert(payload);
 }
 
-function toFixtureRows(fixtureData: DatumGeneratorOutput, tableClass: Class<Table>): TableEntry[] {
-  const entries = fixtureData ? (Array.isArray(fixtureData) ? fixtureData : [fixtureData]) : [];
+function toFixtureRows(
+  fixtureData: DatumGeneratorOutput,
+  tableClass: Class<Table>,
+): TableEntry[] {
+  const entries = fixtureData
+    ? Array.isArray(fixtureData)
+      ? fixtureData
+      : [fixtureData]
+    : [];
   return entries.filter(isTableEntry).map((entry) => {
     const instance = fromPlainData(entry, tableClass);
-    triggerEvent(instance, 'insert');
+    triggerEvent(instance, "insert");
     return toDatabase(instance) as TableEntry;
   });
 }
 
 function isTableEntry(value: unknown): value is TableEntry {
-  return typeof value === 'object' && value !== null;
+  return typeof value === "object" && value !== null;
 }

@@ -1,14 +1,29 @@
-import * as DatabaseDev from '@ajs/database/beta';
-import { Schema } from '@ajs/database/beta';
-import { fromDatabase, fromPlainData, toDatabase, triggerEvent } from './modifiers/common';
-import assert from 'assert';
-import { Constructible, DatumStaticMetadata, DeepPartial, getMetadata } from './common';
-import { Class, MakeParameterAndPropertyDecorator } from '@ajs/core/beta/decorators';
-import { RequestContext, SetParameterProvider } from '@ajs/api/beta';
+import assert from "node:assert";
+import { type RequestContext, SetParameterProvider } from "@ajs/api/beta";
+import {
+  type Class,
+  MakeParameterAndPropertyDecorator,
+} from "@ajs/core/beta/decorators";
+import type * as DatabaseDev from "@ajs/database/beta";
+import { Schema } from "@ajs/database/beta";
+import {
+  type Constructible,
+  DatumStaticMetadata,
+  type DeepPartial,
+  getMetadata,
+} from "./common";
+import {
+  fromDatabase,
+  fromPlainData,
+  toDatabase,
+  triggerEvent,
+} from "./modifiers/common";
 
 export type DataModel<T = any> = {
   readonly schemaName: string;
-  new (database: DatabaseDev.SchemaInstance<any>): {
+  new (
+    database: DatabaseDev.SchemaInstance<any>,
+  ): {
     readonly database: DatabaseDev.SchemaInstance<any>;
     readonly table: DatabaseDev.Table<T>;
   };
@@ -22,15 +37,18 @@ export type DataModel<T = any> = {
  * @param dataType Database Table class
  * @param tableName Table name in Database
  */
-export function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableName?: string) {
+export function BasicDataModel<T extends object>(
+  dataType: Constructible<T>,
+  tableName?: string,
+) {
   const metadata = getMetadata(dataType, DatumStaticMetadata);
   const resolvedName = tableName ?? metadata.tableName;
-  assert(resolvedName, 'tableName must be provided or set via @RegisterTable');
+  assert(resolvedName, "tableName must be provided or set via @RegisterTable");
   const name: string = resolvedName;
   const schemaName = metadata.schemaName;
   const primaryKey = metadata.primary;
   return class Model {
-    public static readonly schemaName = schemaName!;
+    public static readonly schemaName = schemaName as string;
     /**
      * Converts some plain data into an instance of the Table class.
      *
@@ -113,10 +131,12 @@ export function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableNa
     public insert(obj: DeepPartial<T> | Array<DeepPartial<T>>) {
       const converter = (entry: any) => {
         const instance = Model.fromPlainData(entry);
-        triggerEvent(instance, 'insert');
+        triggerEvent(instance, "insert");
         return Model.toDatabase(instance);
       };
-      return this.table.insert(Array.isArray(obj) ? obj.map(converter) : converter(obj)).run();
+      return this.table
+        .insert(Array.isArray(obj) ? obj.map(converter) : converter(obj))
+        .run();
     }
 
     /**
@@ -130,15 +150,15 @@ export function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableNa
     public update(id: string, obj: DeepPartial<T>): Promise<number>;
     public update(obj: DeepPartial<T>): Promise<number>;
     public update(obj: DeepPartial<T> | string, data?: DeepPartial<T>) {
-      if (typeof obj === 'string') {
+      if (typeof obj === "string") {
         const instance = Model.fromPlainData(<DeepPartial<T>>data);
-        triggerEvent(instance, 'update');
+        triggerEvent(instance, "update");
         return this.table.get(obj).update(Model.toDatabase(instance)).run();
       }
       const instance = Model.fromPlainData(obj);
-      triggerEvent(instance, 'update');
+      triggerEvent(instance, "update");
       const id = (<any>obj)[primaryKey];
-      assert(id !== undefined, 'Missing primary key in object update.');
+      assert(id !== undefined, "Missing primary key in object update.");
       return this.table.get(id).update(Model.toDatabase(instance)).run();
     }
 
@@ -156,12 +176,15 @@ export function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableNa
 
 const modelCache = new Map<Class, Record<string, InstanceType<DataModel>>>();
 
-export function GetModel<M extends InstanceType<DataModel>>(cl: DataModel & Class<M>, instanceId?: string) {
+export function GetModel<M extends InstanceType<DataModel>>(
+  cl: DataModel & Class<M>,
+  instanceId?: string,
+) {
   if (!modelCache.has(cl)) {
     modelCache.set(cl, {});
   }
-  const cache = modelCache.get(cl)!;
-  const cacheKey = instanceId ?? '';
+  const cache = modelCache.get(cl) ?? {};
+  const cacheKey = instanceId ?? "";
   if (cache[cacheKey]) return cache[cacheKey] as M;
   const schema = Schema.get(cl.schemaName);
   assert(schema, `Schema not found for '${cl.schemaName}'`);
@@ -176,14 +199,18 @@ export const Model = MakeParameterAndPropertyDecorator(
     key,
     index,
     cl: DataModel & Class<InstanceType<DataModel>>,
-    instanceIdOrCallback?: string | ((ctx: RequestContext) => string | undefined),
+    instanceIdOrCallback?:
+      | string
+      | ((ctx: RequestContext) => string | undefined),
   ) => {
-    if (typeof instanceIdOrCallback === 'function') {
+    if (typeof instanceIdOrCallback === "function") {
       SetParameterProvider(target, key, index, (ctx: RequestContext) => {
         return GetModel(cl, instanceIdOrCallback(ctx));
       });
     } else {
-      SetParameterProvider(target, key, index, () => GetModel(cl, instanceIdOrCallback));
+      SetParameterProvider(target, key, index, () =>
+        GetModel(cl, instanceIdOrCallback),
+      );
     }
   },
 );

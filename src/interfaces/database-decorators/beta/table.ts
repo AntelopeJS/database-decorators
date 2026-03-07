@@ -1,23 +1,47 @@
-import { MixinType, MixinSymbol } from './modifiers/common';
-import { MakePropertyDecorator, MakeClassDecorator, ClassDecorator } from '@ajs/core/beta/decorators';
-import { Constructible, DatumStaticMetadata, getMetadata } from './common';
+import {
+  type ClassDecorator,
+  MakeClassDecorator,
+  MakePropertyDecorator,
+} from "@ajs/core/beta/decorators";
+import { type Constructible, DatumStaticMetadata, getMetadata } from "./common";
+import { MixinSymbol, type MixinType } from "./modifiers/common";
 
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+  k: infer I,
+) => void
+  ? I
+  : never;
 
 export const TableMetaSymbol = Symbol();
 export const TableRefSymbol = Symbol();
-export type ExtractTableMeta<T> = T extends { [TableMetaSymbol]: infer Meta } ? (Meta extends {} ? Meta : never) : {};
+export type ExtractTableMeta<T> = T extends { [TableMetaSymbol]: infer Meta }
+  ? Meta extends object
+    ? Meta
+    : never
+  : object;
 
-export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} | undefined = undefined> {
-  new (...args: Args): { _id: string } & Base & (Meta extends {} ? { [TableMetaSymbol]: Meta } : {});
+export interface TableClass<
+  Base = object,
+  Args extends any[] = [],
+  Meta extends object | undefined = undefined,
+> {
+  new (
+    ...args: Args
+  ): { _id: string } & Base &
+    (Meta extends object ? { [TableMetaSymbol]: Meta } : object);
 
-  /* public static */ with<This extends TableClass, T extends Constructible<{ [MixinSymbol]: Constructible }>[] = []>(
+  /* public static */ with<
+    This extends TableClass,
+    T extends Constructible<{ [MixinSymbol]: Constructible }>[] = [],
+  >(
     this: This,
     ...other: T
   ): TableClass<
-    InstanceType<This> & UnionToIntersection<InstanceType<MixinType<InstanceType<T[number]>>>>,
+    InstanceType<This> &
+      UnionToIntersection<InstanceType<MixinType<InstanceType<T[number]>>>>,
     ConstructorParameters<This>,
-    ExtractTableMeta<InstanceType<This>> | ExtractTableMeta<InstanceType<T[number]>>
+    | ExtractTableMeta<InstanceType<This>>
+    | ExtractTableMeta<InstanceType<T[number]>>
   >;
 }
 
@@ -33,21 +57,27 @@ export class Table {
    * @param others List of Modifier mixin classes
    * @returns New superclass
    */
-  public static with<This extends typeof Table, T extends Constructible<{ [MixinSymbol]: Constructible }>[] = []>(
+  public static with<
+    This extends typeof Table,
+    T extends Constructible<{ [MixinSymbol]: Constructible }>[] = [],
+  >(
     this: This,
     ...others: T
   ): TableClass<
-    InstanceType<This> & UnionToIntersection<InstanceType<MixinType<InstanceType<T[number]>>>>,
+    InstanceType<This> &
+      UnionToIntersection<InstanceType<MixinType<InstanceType<T[number]>>>>,
     ConstructorParameters<This>,
-    ExtractTableMeta<InstanceType<This>> | ExtractTableMeta<InstanceType<T[number]>>
+    | ExtractTableMeta<InstanceType<This>>
+    | ExtractTableMeta<InstanceType<T[number]>>
   > {
-    const c = class _internal_table extends (<any>this) {};
+    // biome-ignore lint/complexity/noThisInStatic: intentional mixin pattern — this refers to the calling class
+    const c = class _internal_table extends (this as any) {};
     for (const mixin of others
       .map((otherClass) => otherClass.prototype && new otherClass())
-      .map((other) => other && other[MixinSymbol])
+      .map((other) => other?.[MixinSymbol])
       .filter((mixin) => mixin?.prototype)) {
       for (const key of Object.getOwnPropertyNames(mixin.prototype)) {
-        if (key !== 'constructor' && !(key in c.prototype)) {
+        if (key !== "constructor" && !(key in c.prototype)) {
           (<any>c.prototype)[key] = mixin.prototype[key];
         }
       }
@@ -69,10 +99,15 @@ export class Table {
  *
  * @param options Options
  */
-export const Index = MakePropertyDecorator((target, propertyKey, options?: { group?: string }) => {
-  const metadata = getMetadata(target.constructor, DatumStaticMetadata);
-  metadata.addIndex(<string>propertyKey, options?.group || <string>propertyKey);
-});
+export const Index = MakePropertyDecorator(
+  (target, propertyKey, options?: { group?: string }) => {
+    const metadata = getMetadata(target.constructor, DatumStaticMetadata);
+    metadata.addIndex(
+      <string>propertyKey,
+      options?.group || <string>propertyKey,
+    );
+  },
+);
 
 type AwaitableArray<T> = Promise<T | T[]> | T | T[];
 /**
@@ -84,5 +119,5 @@ export const Fixture: <T extends typeof Table>(
   generator: (p: T) => AwaitableArray<Partial<InstanceType<T>>>,
 ) => ClassDecorator<T> = MakeClassDecorator((target, generator) => {
   const metadata = getMetadata(target, DatumStaticMetadata);
-  metadata.generator = generator as unknown as DatumStaticMetadata['generator'];
+  metadata.generator = generator as unknown as DatumStaticMetadata["generator"];
 });

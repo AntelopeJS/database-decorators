@@ -1,6 +1,11 @@
-import * as DatabaseDev from '@ajs/database/beta';
-import { MixinSymbol, ContainerModifier, attachModifier, unlock } from './common';
-import { MakePropertyDecorator } from '@ajs/core/beta/decorators';
+import { MakePropertyDecorator } from "@ajs/core/beta/decorators";
+import type * as DatabaseDev from "@ajs/database/beta";
+import {
+  attachModifier,
+  ContainerModifier,
+  MixinSymbol,
+  unlock,
+} from "./common";
 
 type Options = {
   /** Fallback locale to use when no value exists for the selected locale. */
@@ -16,7 +21,10 @@ type Options = {
  *
  * See {@link ContainerModifier} for the generic modifier.
  */
-export class LocalizationModifier extends ContainerModifier<{}, Options> {
+export class LocalizationModifier extends ContainerModifier<
+  Record<string, never>,
+  Options
+> {
   public override unlock(locked_value: Record<string, unknown>, key: string) {
     const unlocked = super.unlock(locked_value, key);
     if (unlocked !== undefined) {
@@ -29,7 +37,7 @@ export class LocalizationModifier extends ContainerModifier<{}, Options> {
 
   public override unlockrequest(
     data: DatabaseDev.ValueProxy<Record<string, unknown>>,
-    meta: DatabaseDev.ValueProxy<{}>,
+    _meta: DatabaseDev.ValueProxy<Record<string, never>>,
     key: DatabaseDev.ValueProxyOrValue<string>,
   ): DatabaseDev.ValueProxy<unknown> {
     if (this.options.fallbackLocale) {
@@ -47,7 +55,11 @@ export class LocalizationModifier extends ContainerModifier<{}, Options> {
      *
      * @returns `this`
      */
-    localize<This extends { constructor: any }>(this: This, locale: string, fields?: Array<keyof This>): This {
+    localize<This extends { constructor: any }>(
+      this: This,
+      locale: string,
+      fields?: Array<keyof This>,
+    ): This {
       unlock(this, LocalizationModifier, fields, locale);
       return this;
     }
@@ -61,6 +73,13 @@ export class LocalizationModifier extends ContainerModifier<{}, Options> {
  *
  * @param options Localization options.
  */
-export const Localized = MakePropertyDecorator((target, propertyKey, options?: Options) => {
-  attachModifier(target.constructor, LocalizationModifier, propertyKey, options || {});
-});
+export const Localized = MakePropertyDecorator(
+  (target, propertyKey, options?: Options) => {
+    attachModifier(
+      target.constructor,
+      LocalizationModifier,
+      propertyKey,
+      options || {},
+    );
+  },
+);

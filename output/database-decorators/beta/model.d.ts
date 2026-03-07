@@ -1,7 +1,7 @@
-import * as DatabaseDev from '@ajs/database/beta';
-import { Constructible, DeepPartial } from './common';
-import { Class } from '@ajs/core/beta/decorators';
-import { RequestContext } from '@ajs/api/beta';
+import { type RequestContext } from "@ajs/api/beta";
+import { type Class } from "@ajs/core/beta/decorators";
+import type * as DatabaseDev from "@ajs/database/beta";
+import { type Constructible, type DeepPartial } from "./common";
 export type DataModel<T = any> = {
     readonly schemaName: string;
     new (database: DatabaseDev.SchemaInstance<any>): {
@@ -17,7 +17,7 @@ export type DataModel<T = any> = {
  * @param dataType Database Table class
  * @param tableName Table name in Database
  */
-export declare function BasicDataModel<T extends {}>(dataType: Constructible<T>, tableName?: string): {
+export declare function BasicDataModel<T extends object>(dataType: Constructible<T>, tableName?: string): {
     new (database: DatabaseDev.SchemaInstance<any>): {
         /**
          * AQL Table reference.

@@ -1,18 +1,18 @@
-import { MixinType, MixinSymbol } from './modifiers/common';
-import { ClassDecorator } from '@ajs/core/beta/decorators';
-import { Constructible } from './common';
+import { type ClassDecorator } from "@ajs/core/beta/decorators";
+import { type Constructible } from "./common";
+import { MixinSymbol, type MixinType } from "./modifiers/common";
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 export declare const TableMetaSymbol: unique symbol;
 export declare const TableRefSymbol: unique symbol;
 export type ExtractTableMeta<T> = T extends {
     [TableMetaSymbol]: infer Meta;
-} ? (Meta extends {} ? Meta : never) : {};
-export interface TableClass<Base = {}, Args extends any[] = [], Meta extends {} | undefined = undefined> {
+} ? Meta extends object ? Meta : never : object;
+export interface TableClass<Base = object, Args extends any[] = [], Meta extends object | undefined = undefined> {
     new (...args: Args): {
         _id: string;
-    } & Base & (Meta extends {} ? {
+    } & Base & (Meta extends object ? {
         [TableMetaSymbol]: Meta;
-    } : {});
+    } : object);
     with<This extends TableClass, T extends Constructible<{
         [MixinSymbol]: Constructible;
     }>[] = []>(this: This, ...other: T): TableClass<InstanceType<This> & UnionToIntersection<InstanceType<MixinType<InstanceType<T[number]>>>>, ConstructorParameters<This>, ExtractTableMeta<InstanceType<This>> | ExtractTableMeta<InstanceType<T[number]>>>;

@@ -1,4 +1,4 @@
-import { MixinSymbol, OneWayModifier } from './common';
+import { MixinSymbol, OneWayModifier } from "./common";
 type Options = {
     /** Hashing algorithm (for supported algorithms refer to {@link createHash}) */
     algorithm?: string;
@@ -10,11 +10,12 @@ type Options = {
  * Because of this, you lose the ability to query the information directly.
  * You can test equality using {@link testHash}
  */
-export declare class HashModifier extends OneWayModifier<string | undefined, [], {
+export declare class HashModifier extends OneWayModifier<string | undefined, [
+], {
     salt?: string;
 }, Options> {
     readonly autolock = true;
-    lock(locked_value: string | undefined, value: unknown): string | undefined;
+    lock(_locked_value: string | undefined, value: unknown): string | undefined;
     [MixinSymbol]: {
         new (): {
             /**
