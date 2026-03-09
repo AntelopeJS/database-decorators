@@ -483,7 +483,7 @@ export function unlock<
 }
 
 type ModifierWithProxyArgs = {
-  modifier: Constructible<TwoWayModifier<any, any[]>>;
+  modifier: Constructible<TwoWayModifier<any, any[], any, any>>;
   args: DatabaseDev.ValueProxyOrValue<any>[];
 };
 export function unlockrequest<T extends {}, K extends keyof T>(

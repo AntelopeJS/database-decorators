@@ -71,7 +71,7 @@ export declare function unlock<T extends {
     constructor: any;
 }, M extends Constructible<Modifier>>(object: T, Modifier: M, fields: Array<keyof T> | undefined, ...args: ExtractModifierArgs<InstanceType<M>>): void;
 type ModifierWithProxyArgs = {
-    modifier: Constructible<TwoWayModifier<any, any[]>>;
+    modifier: Constructible<TwoWayModifier<any, any[], any, any>>;
     args: DatabaseDev.ValueProxyOrValue<any>[];
 };
 export declare function unlockrequest<T extends {}, K extends keyof T>(table: Constructible<T>, object: DatabaseDev.ValueProxy<T>, field: K, modifiers: ModifierWithProxyArgs[]): DatabaseDev.ValueProxy<T[K]>;
