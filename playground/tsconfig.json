@@ -19,14 +19,7 @@
     "useDefineForClassFields": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "baseUrl": "src",
-    "paths": {
-      "@ajs/*": [
-        "../../output/*",
-        "../../.antelope/interfaces.d/*",
-        "../.antelope/interfaces.d/*"
-      ]
-    }
+    "baseUrl": "src"
   },
   "include": ["src/**/*.ts"]
 }

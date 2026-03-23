@@ -3,7 +3,7 @@ import {
   Index,
   RegisterTable,
   Table,
-} from "@ajs/database-decorators/beta";
+} from "@antelopejs/interface-database-decorators";
 
 @RegisterTable("users", "app")
 class User extends Table {

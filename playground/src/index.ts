@@ -6,11 +6,11 @@ import {
   Post,
   Put,
   RawBody,
-} from "@ajs/api/beta";
+} from "@antelopejs/interface-api";
 import {
   CreateDatabaseSchemaInstance,
   Model,
-} from "@ajs/database-decorators/beta";
+} from "@antelopejs/interface-database-decorators";
 import { UserModel } from "./db/user";
 
 export class PlaygroundController extends Controller("/playground") {
