@@ -1,5 +1,50 @@
 # Changelog
 
+## v1.0.0
+
+[compare changes](https://github.com/AntelopeJS/database-decorators/compare/v0.1.0...v1.0.0)
+
+### 🚀 Enhancements
+
+- AQL2 - refactor database, schema, and model with global instance and schema options ([#16](https://github.com/AntelopeJS/database-decorators/pull/16))
+
+### 🩹 Fixes
+
+- Update primary key name in DatumStaticMetadata ([bd896f1](https://github.com/AntelopeJS/database-decorators/commit/bd896f1))
+
+### 💅 Refactors
+
+- Unify StaticModel and DynamicModel into a single Model decorator ([359dc66](https://github.com/AntelopeJS/database-decorators/commit/359dc66))
+- Add default id primary key to Table and remove primary Index option ([f2f54fb](https://github.com/AntelopeJS/database-decorators/commit/f2f54fb))
+- Rename default Table primary key from id to _id ([d372511](https://github.com/AntelopeJS/database-decorators/commit/d372511))
+
+### 📦 Build
+
+- Replace rm -rf with rimraf ([#13](https://github.com/AntelopeJS/database-decorators/pull/13))
+
+### 🏡 Chore
+
+- Replicate ai agent config files (.agents/.claude) ([#14](https://github.com/AntelopeJS/database-decorators/pull/14))
+- Remove ci publish adopt guidelines strict ts interface tests ([#15](https://github.com/AntelopeJS/database-decorators/pull/15))
+- Simplify CI workflow triggers and update AGENTS.md ([65ce481](https://github.com/AntelopeJS/database-decorators/commit/65ce481))
+- Exports generate ([07d9290](https://github.com/AntelopeJS/database-decorators/commit/07d9290))
+- Migrate from eslint/prettier to biome and fix all lint warnings ([#17](https://github.com/AntelopeJS/database-decorators/pull/17))
+- Migrate from local beta interfaces to published @antelopejs packages ([b1026fa](https://github.com/AntelopeJS/database-decorators/commit/b1026fa))
+
+### ✅ Tests
+
+- Update primary key assertions from id to _id ([36caf32](https://github.com/AntelopeJS/database-decorators/commit/36caf32))
+
+### 🤖 CI
+
+- Remove test:coverage step from CI workflow ([3148e20](https://github.com/AntelopeJS/database-decorators/commit/3148e20))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli <upd4ting@gmail.com>
+- Thomasims <thomas@antelopejs.com>
+- Glastis ([@Glastis](http://github.com/Glastis))
+
 ## v0.1.0
 
 [compare changes](https://github.com/AntelopeJS/database-decorators/compare/v0.0.1...v0.1.0)
