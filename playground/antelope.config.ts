@@ -19,9 +19,9 @@ export default defineConfig({
     },
     "@antelopejs/api": {
       source: {
-        type: "local",
-        path: "../../api",
-        installCommand: ["pnpm install", "npx tsc"],
+        type: "package",
+        package: "@antelopejs/api",
+        version: "1.0.0",
       },
       config: {
         servers: [
@@ -34,9 +34,9 @@ export default defineConfig({
     },
     "@antelopejs/mongodb": {
       source: {
-        type: "local",
-        path: "../../mongodb",
-        installCommand: ["pnpm install", "npx tsc"],
+        type: "package",
+        package: "@antelopejs/mongodb",
+        version: "1.0.0",
       },
       config: {
         url: "mongodb://localhost:27017",
