@@ -15,11 +15,11 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2
       '@antelopejs/interface-database':
-        specifier: ^0.0.2
-        version: 0.0.2
+        specifier: ^0.1.0
+        version: 0.1.0
       '@antelopejs/interface-database-decorators':
-        specifier: ^0.0.2
-        version: 0.0.2
+        specifier: ^0.1.0
+        version: 0.1.0
       chai:
         specifier: ^4.5.0
         version: 4.5.0
@@ -109,14 +109,26 @@ packages:
   '@antelopejs/interface-api@0.0.2':
     resolution: {integrity: sha512-wD9kODuc5cns8mCVv4hLL3N8eF2iXtXoMgtDS7zJ3hZZoPnlpxZ7mDP4fMRUDBl0pm9ZTPKb5abzu3BZg6T/EA==}
 
+  '@antelopejs/interface-api@0.0.3':
+    resolution: {integrity: sha512-64UrrttRAjA1LsXwDskh/UVcXDFpH2+gxJHCT+F8YGLPDJE1XzVUW6/YeG441J+zsFJTnaU6Vlt90TwWumcpCA==}
+
   '@antelopejs/interface-core@0.0.2':
     resolution: {integrity: sha512-CmtOJvSCRj20GOQhrE0PpHybGaW1G1lrepiKHVJa/bclhrvFYgHV0MH84TMpMOHESQT/+wuup007tfXAwaI+Eg==}
+
+  '@antelopejs/interface-core@0.0.3':
+    resolution: {integrity: sha512-Kw3ffGiQHKJ88AqdFfPuwzl+v0w6QqzqiqnLY7M0MYYw+YwdRNXh5WAJkep0ePudR9leLGXPU//FYizNaDG6yw==}
 
   '@antelopejs/interface-database-decorators@0.0.2':
     resolution: {integrity: sha512-XWdk/L585gsKmKyP8XjsQuF2FlG+DScIEdPlE2Btg886CCxBSFZ+rKgVRmvEv5xZL1g8wq0MOEQIzFYCXasJOg==}
 
+  '@antelopejs/interface-database-decorators@0.1.0':
+    resolution: {integrity: sha512-Q164yFNncl4/KxljhVWdXhBP2NfvXQerEwTy92MlaM3x2Sv7UY/Myvtw2A2o2xdzS3FqFLKP4en2Cb73iSxQAg==}
+
   '@antelopejs/interface-database@0.0.2':
     resolution: {integrity: sha512-SFqPwHZf1Qh1Zfcdu1CSBh5/uqT2jEczMtERcOChQYAiEKN+XwStwVttAY7yy/TKd3frqjZ3GrwKK1qXxqx7qQ==}
+
+  '@antelopejs/interface-database@0.1.0':
+    resolution: {integrity: sha512-6r+f5A6fttYrQyUh7NnRJxOaNjgsKpb3CeROIQGB7z5EB1vsxgOji8X3CBXflZeEIPlueMuw+YKv1e5+LE6hDg==}
 
   '@babel/code-frame@7.29.0':
     resolution: {integrity: sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==}
@@ -2260,7 +2272,15 @@ snapshots:
     dependencies:
       '@antelopejs/interface-core': 0.0.2
 
+  '@antelopejs/interface-api@0.0.3':
+    dependencies:
+      '@antelopejs/interface-core': 0.0.3
+
   '@antelopejs/interface-core@0.0.2':
+    dependencies:
+      reflect-metadata: 0.2.2
+
+  '@antelopejs/interface-core@0.0.3':
     dependencies:
       reflect-metadata: 0.2.2
 
@@ -2272,9 +2292,21 @@ snapshots:
       randomstring: 1.3.1
       reflect-metadata: 0.2.2
 
+  '@antelopejs/interface-database-decorators@0.1.0':
+    dependencies:
+      '@antelopejs/interface-api': 0.0.3
+      '@antelopejs/interface-core': 0.0.3
+      '@antelopejs/interface-database': 0.1.0
+      randomstring: 1.3.1
+      reflect-metadata: 0.2.2
+
   '@antelopejs/interface-database@0.0.2':
     dependencies:
       '@antelopejs/interface-core': 0.0.2
+
+  '@antelopejs/interface-database@0.1.0':
+    dependencies:
+      '@antelopejs/interface-core': 0.0.3
 
   '@babel/code-frame@7.29.0':
     dependencies:
