@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.1.0
+
+[compare changes](https://github.com/AntelopeJS/database-decorators/compare/v1.0.0...v1.1.0)
+
+### 💅 Refactors
+
+- Switch playground and test modules from local to npm packages ([00a2ecd](https://github.com/AntelopeJS/database-decorators/commit/00a2ecd))
+
+### 🏡 Chore
+
+- Update dependencies and add @types/semver ([8df3cc1](https://github.com/AntelopeJS/database-decorators/commit/8df3cc1))
+- ⚠️  Bump to interface-database 0.1.0 and interface-database-decorators 0.1.0 ([63ac679](https://github.com/AntelopeJS/database-decorators/commit/63ac679))
+- Revert manual version bump so release-it can drive the bump ([b943a8f](https://github.com/AntelopeJS/database-decorators/commit/b943a8f))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Bump to interface-database 0.1.0 and interface-database-decorators 0.1.0 ([63ac679](https://github.com/AntelopeJS/database-decorators/commit/63ac679))
+
+### ❤️ Contributors
+
+- Antony Rizzitelli <upd4ting@gmail.com>
+
 ## v1.0.0
 
 [compare changes](https://github.com/AntelopeJS/database-decorators/compare/v0.1.0...v1.0.0)
